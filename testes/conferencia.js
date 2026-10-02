@@ -79,5 +79,18 @@ const a = M.aplicarAportes({ aportes: [{ mes: 0, valor: 1e5 }], mesFinal: 25, ta
 const rend = 1e5 * (Math.pow(1.1365, 25 / 12) - 1);
 igual("CDB líquido 25 meses", a.liquido, 1e5 + rend * 0.85);
 
+// 11. Venda da carta: 20% sobre o crédito líquido; lucro = venda − pago
+const v = M.simularCota({ credito: 1e6, prazo: 220, taxaTotal: 0.23, meia: true, reajuste: 0.05, mesContemplacao: 36, modalidade: "sorteio" });
+const venda = M.vendaCarta({ creditoDisponivel: v.contemplacao.creditoDisponivel, pagoAteContemplar: v.contemplacao.pagoTotal, agio: 0.2 });
+igual("Venda: 20% de 1.102.500", venda.recebe, 220500);
+igual("Venda: lucro = venda − pago", venda.lucro, 220500 - v.contemplacao.pagoTotal);
+
+// 12. Seguro prestamista só quando escolhido (compra do bem)
+const semSeg = M.simularCota({ credito: 1e6, prazo: 220, taxaTotal: 0.23, mesContemplacao: 36, modalidade: "sorteio", seguroPrestamista: 0.00055 });
+const comSeg = M.simularCota({ credito: 1e6, prazo: 220, taxaTotal: 0.23, mesContemplacao: 36, modalidade: "sorteio", seguroPrestamista: 0.00055, comSeguro: true });
+igual("Sem seguro, total de seguro = 0", semSeg.seguroTotal, 0);
+// mês 37 é aniversário do grupo: o saldo reajusta 5% antes do seguro
+igual("Com seguro, 1º mês = 0,055% do saldo reajustado", comSeg.meses[36].seguro, comSeg.contemplacao.saldoDevedor * 1.05 * 0.00055);
+
 console.log(falhas ? `\n${falhas} conferência(s) com erro.` : "\nTodas as conferências bateram.");
 process.exit(falhas ? 1 : 0);

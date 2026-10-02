@@ -32,8 +32,10 @@
       credito, prazo, taxaTotal, meia = true, reajuste = 0.05,
       mesContemplacao = null, modalidade = "sorteio",
       lanceEmbutido = 0.30, mesesSemPagarLance = 2,
-      rendCreditoAm = 0, seguroPrestamista = 0
+      rendCreditoAm = 0, seguroPrestamista = 0, comSeguro = false
     } = o;
+    // O seguro prestamista só entra quando o cliente usa o crédito para comprar um bem.
+    const taxaSeguro = comSeguro ? seguroPrestamista : 0;
     const pctPorParcela = (1 + taxaTotal) / prazo / (meia ? 2 : 1);
     const contempla = mesContemplacao && modalidade !== "nenhuma" && mesContemplacao <= prazo;
     const meses = [];
@@ -82,7 +84,7 @@
       if (m >= primeiroPos && saldo > 0.005) {
         const restantes = prazo - m + 1;
         parcelaPos = saldo / restantes;
-        seguroMes = saldo * seguroPrestamista;
+        seguroMes = saldo * taxaSeguro;
         saldo -= parcelaPos;
         parcelaMes = parcelaPos;
       }
@@ -108,10 +110,10 @@
   }
 
   // ---------- Venda da carta contemplada ----------
-  // modelo "agio": comprador paga o que você já pagou + ágio sobre o crédito disponível.
-  // modelo "percentual": comprador paga um percentual do crédito (como na planilha antiga).
-  function vendaCarta({ creditoDisponivel, pagoAteContemplar, agio, modelo = "agio" }) {
-    const recebe = modelo === "agio" ? pagoAteContemplar + creditoDisponivel * agio : creditoDisponivel * agio;
+  // Valor da venda = ágio × crédito líquido na contemplação (já reajustado e sem o lance embutido).
+  // Lucro = valor da venda − tudo o que foi pago até a contemplação.
+  function vendaCarta({ creditoDisponivel, pagoAteContemplar, agio }) {
+    const recebe = creditoDisponivel * agio;
     const lucro = recebe - pagoAteContemplar;
     return { recebe, lucro, lucroPct: pagoAteContemplar ? lucro / pagoAteContemplar : 0 };
   }

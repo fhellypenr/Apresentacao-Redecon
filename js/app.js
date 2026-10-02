@@ -109,7 +109,7 @@
     const a = (id, icone) => `
       <div class="alavanca">
         <span aria-hidden="true">${ICONES[icone].replace("<svg", '<svg stroke="url(#grad-icone)" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"')}</span>
-        <div><h3>${T(id + "_t")}</h3><p>${T(id)}</p></div>
+        <div><h3>${T(id + "_t")}</h3><p>${T(id)}</p>${T(id + "_obs") ? `<p>${T(id + "_obs")}</p>` : ""}</div>
       </div>`;
     return `
       <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="grad-icone" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#D81840"/><stop offset="1" stop-color="#F84434"/></linearGradient></defs></svg>

@@ -52,11 +52,12 @@ window.DADOS_PADRAO = {
     regra_fidelidade_titulo: "Fidelidade não acumula",
     regra_fidelidade: "As fidelidades exigem parcelas pagas em dia, seguidas. Um dia de atraso zera a contagem e as fidelidades precisam ser conquistadas de novo.",
     funil_titulo: "Quanto mais disciplina, menor a concorrência.",
-    otimizar_titulo: "Como chegar lá mais rápido",
+    otimizar_titulo: "Estratégias para acelerar sua contemplação",
     otimizar_grupo_t: "Escolha do grupo",
     otimizar_grupo: "Prazo e regras de lance mudam de um grupo para outro. Indicamos o grupo que combina com o seu objetivo.",
     otimizar_multicotas_t: "Multicotas",
     otimizar_multicotas: "Dividir o crédito em mais de uma cota coloca mais cotas concorrendo em cada assembleia.",
+    otimizar_multicotas_obs: "Faz mais sentido para quem pretende vender a carta. Para usar o crédito todo, é preciso aguardar a contemplação de todas as cotas.",
     otimizar_lance_t: "Lance embutido",
     otimizar_lance: "Até {lance_embutido} do próprio crédito pode ser usado como lance, sem tirar dinheiro do bolso.",
     otimizar_fidelidade_t: "Fidelidade",
@@ -65,6 +66,6 @@ window.DADOS_PADRAO = {
     compromisso_cliente_rotulo: "O seu único compromisso",
     compromisso_cliente: "Pagar a parcela em dia.",
     compromisso_redecon_rotulo: "O que a Redecon faz por você",
-    compromisso_redecon_itens: "Envia o boleto todo mês; Oferta os lances nas assembleias; Acompanha você da primeira conversa até a entrega do bem"
+    compromisso_redecon_itens: "Envia o boleto todo mês; Oferta os lances nas assembleias; Orienta, sugere caminhos e analisa as possibilidades a cada decisão; Acompanha você da primeira conversa até a entrega do bem"
   }
 };

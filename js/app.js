@@ -136,27 +136,53 @@
     return `<h2 class="titulo">${esc(nome)}</h2><p class="sub">Este módulo entra nas próximas etapas.</p>`;
   }
 
+  // ---------- Estado da simulação (compartilhado entre as telas) ----------
+  let estado = null;
+  function criarEstado() {
+    const p = D.parametros;
+    return {
+      credito: p.ex_credito || 1000000,
+      prazo: p.ex_prazo || 220,
+      meia: String(p.ex_parcela || "meia").toLowerCase() !== "cheia",
+      mes: 36, modalidade: "sorteio",
+      agio: p.agio_venda != null ? p.agio_venda : 0.2
+    };
+  }
+  const ctx = {
+    get D() { return D; }, T, esc, fmtPct, fmtReal,
+    get estado() { return estado; },
+    mudou() { document.dispatchEvent(new CustomEvent("redecon:estado")); }
+  };
+
   // Estrutura completa do roteiro. "telas" vazias = módulo ainda não construído.
-  const SECOES = [
-    { nome: "Abertura", telas: [{ id: "capa", classe: "capa", html: telaCapa }] },
-    { nome: "Quem somos", telas: [] },
-    { nome: "Virada de chave", telas: [] },
-    { nome: "Método API", telas: [] },
-    { nome: "Aquisição", telas: [] },
-    { nome: "Poupança", telas: [] },
-    { nome: "Investimento", telas: [] },
-    { nome: "Como chegar lá", telas: [
-      { id: "regras", nome: "Regras do jogo", html: telaRegras },
-      { id: "funil", nome: "Disciplina e concorrência", html: telaFunil, iniciar: iniciarFunil },
-      { id: "otimizar", nome: "Como otimizar", html: telaOtimizar },
-      { id: "compromisso", nome: "Compromissos", html: telaCompromisso }
-    ] },
-    { nome: "Segurança, rendimento e liquidez", telas: [] },
-    { nome: "Casos reais", telas: [] },
-    { nome: "Fechamento", telas: [] },
-    { nome: "Encerramento", telas: [] }
-  ];
-  const LISTA = SECOES.flatMap((s, si) => s.telas.map(t => Object.assign({ secao: si }, t)));
+  // Com um foco escolhido, o pilar do foco vem primeiro.
+  function construirRoteiro() {
+    const P = window.PILARES || {};
+    const ordem = ["aquisicao", "poupanca", "investimento"];
+    if (ordem.includes(ajustes.foco)) { ordem.splice(ordem.indexOf(ajustes.foco), 1); ordem.unshift(ajustes.foco); }
+    const comCtx = t => Object.assign({}, t, {
+      html: () => t.html(ctx),
+      iniciar: t.iniciar ? el => t.iniciar(el, ctx) : null
+    });
+    return [
+      { nome: "Abertura", telas: [{ id: "capa", classe: "capa", html: telaCapa }] },
+      { nome: "Quem somos", telas: [] },
+      { nome: "Virada de chave", telas: [] },
+      { nome: "Método API", telas: [] },
+      ...ordem.map(k => ({ nome: (P[k] && P[k].nome) || k, telas: P[k] ? P[k].telas.map(comCtx) : [] })),
+      { nome: "Como chegar lá", telas: [
+        { id: "regras", nome: "Regras do jogo", html: telaRegras },
+        { id: "funil", nome: "Disciplina e concorrência", html: telaFunil, iniciar: iniciarFunil },
+        { id: "otimizar", nome: "Estratégias", html: telaOtimizar },
+        { id: "compromisso", nome: "Compromissos", html: telaCompromisso }
+      ] },
+      { nome: "Segurança, rendimento e liquidez", telas: [] },
+      { nome: "Casos reais", telas: [] },
+      { nome: "Fechamento", telas: [] },
+      { nome: "Encerramento", telas: [] }
+    ];
+  }
+  let SECOES = [], LISTA = [];
   let atual = 0;
 
   // ---------- Funil ----------
@@ -224,6 +250,11 @@
 
   // ---------- Montagem ----------
   function montar() {
+    const idAtual = LISTA[atual] ? LISTA[atual].id : null;
+    SECOES = construirRoteiro();
+    LISTA = SECOES.flatMap((s, si) => s.telas.map(t => Object.assign({ secao: si }, t)));
+    if (idAtual) { const k = LISTA.findIndex(t => t.id === idAtual); if (k >= 0) atual = k; }
+    if (!estado) estado = criarEstado();
     const palco = $(".palco");
     palco.innerHTML = LISTA.map((t, i) =>
       `<section class="slide ${t.classe || ""}" data-i="${i}" aria-roledescription="tela" aria-label="${esc(t.nome || SECOES[t.secao].nome)}">${t.html()}</section>`).join("");
@@ -261,6 +292,7 @@
     if (anterior && anterior._sair && antes !== i) anterior._sair();
     const el = $(`.slide[data-i="${i}"]`);
     if (el && el._reiniciar && (inicial || antes !== i)) el._reiniciar();
+    if (el && el._aoMostrar && antes !== i) el._aoMostrar();
     const sec = LISTA[i].secao;
     $$(".progresso button").forEach((b, si) => {
       b.classList.toggle("atual", si === sec);
@@ -307,11 +339,10 @@
   // ---------- Início ----------
   async function iniciar() {
     D = await Dados.carregar();
-    const hash = location.hash.slice(1);
-    const pelaUrl = LISTA.findIndex(t => t.id === hash);
-    if (pelaUrl >= 0) atual = pelaUrl;
     montarAjustes();
     montar();
+    const pelaUrl = LISTA.findIndex(t => t.id === location.hash.slice(1));
+    if (pelaUrl >= 0) ir(pelaUrl, true);
     mostrarStatus();
 
     $("#bt-ant").addEventListener("click", () => ir(atual - 1));
@@ -321,15 +352,17 @@
     $$(".painel-fechar").forEach(b => b.addEventListener("click", fecharPaineis));
     $("#bt-atualizar").addEventListener("click", async () => {
       $("#bt-atualizar").textContent = "Atualizando…";
-      D = await Dados.carregar(); montar(); mostrarStatus();
+      D = await Dados.carregar(); estado = criarEstado(); montar(); mostrarStatus();
       $("#bt-atualizar").textContent = "Atualizar dados";
     });
     const tela = $("#bt-tela");
     if (!document.documentElement.requestFullscreen) tela.hidden = true;
     tela.addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
 
+    let tRes = null;
+    window.addEventListener("resize", () => { clearTimeout(tRes); tRes = setTimeout(() => ctx.mudou(), 250); });
     document.addEventListener("keydown", e => {
-      if (e.target.closest("input, select, textarea")) return;
+      if (e.target.closest("input, select, textarea, .graf")) return;
       if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); ir(atual + 1); }
       if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); ir(atual - 1); }
       if (e.key === "Escape") fecharPaineis();

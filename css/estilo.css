@@ -204,6 +204,85 @@ h1, h2, h3 { font-family: var(--fonte-titulo); margin: 0; letter-spacing: -0.02e
 .dados-info dt { color: var(--azul-300); }
 .dados-info dd { margin: 0; color: var(--texto); }
 
+
+/* ---------- Pilares: controles ---------- */
+.controles { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-end; margin: clamp(14px, 2.5vh, 26px) 0 clamp(10px, 2vh, 20px); }
+.ctl { display: grid; gap: 4px; font-size: .78em; color: var(--azul-300); position: relative; }
+.ctl input, .ctl select, .mini-ctl input {
+  font: inherit; font-size: 1.15em; color: var(--texto); background: rgba(255,255,255,.05); border: 1px solid var(--linha);
+  border-radius: 8px; padding: 6px 10px; min-width: 0;
+}
+.ctl input[data-ctl="credito"] { width: 11em; }
+.ctl input[type="number"] { width: 5.5em; }
+.ctl em, .mini-ctl em { font-style: normal; margin-left: 4px; color: var(--texto-suave); }
+.ctl label, label.ctl { display: grid; }
+label.ctl:has(em) { grid-template-columns: auto auto; align-items: center; }
+label.ctl:has(em) > span { grid-column: 1 / -1; }
+.seg { display: inline-flex; border: 1px solid var(--linha); border-radius: 999px; padding: 3px; }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: .35em .9em; cursor: pointer; font-size: 1.05em; color: var(--texto-suave); font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--texto); color: var(--azul-800); }
+
+/* ---------- Pilares: números ---------- */
+.dois { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.6fr); gap: clamp(20px, 3.5vw, 64px); align-items: start; }
+.nums { display: grid; gap: clamp(12px, 2.2vh, 22px); }
+.num { display: grid; gap: 2px; }
+.num-rotulo { font-size: .8em; color: var(--texto-suave); }
+.num-valor { font-family: var(--fonte-titulo); font-weight: 700; font-size: clamp(20px, 1.8vw, 34px); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.num.grande .num-valor { font-size: clamp(28px, 2.8vw, 52px); }
+.num.positivo .num-valor { color: #FF8A7A; }
+.num-nota { font-size: .72em; color: var(--azul-300); }
+.premissas { margin-top: auto; padding-top: 14px; font-size: .68em; color: var(--azul-300); max-width: 120ch; }
+.premissas strong { color: var(--texto-suave); font-weight: 600; }
+
+/* ---------- Aquisição ---------- */
+.usos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 56px); margin: auto 0; }
+.uso { border-top: 3px solid var(--vermelho-2); padding-top: 18px; }
+.uso h3 { font-size: clamp(24px, 2.2vw, 42px); font-weight: 700; margin-bottom: .4em; }
+.uso p { margin: 0; color: var(--texto-suave); font-size: 1.1em; max-width: 30ch; }
+.usos-rodape { margin-bottom: auto; }
+.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 2vw, 32px); align-items: stretch; }
+.opcao { border: 1px solid var(--linha); border-radius: 14px; padding: clamp(16px, 2vw, 30px); display: grid; gap: clamp(10px, 1.8vh, 18px); align-content: start; }
+.opcao h3 { font-size: clamp(18px, 1.5vw, 28px); font-weight: 700; }
+.opcao-destaque { border: 2px solid var(--vermelho-2); background: rgba(248, 68, 52, .07); }
+.mini-ctl { display: flex; gap: 14px; flex-wrap: wrap; font-size: .8em; color: var(--azul-300); }
+.mini-ctl label { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.mini-ctl input { width: 5.5em; }
+
+/* ---------- Poupança ---------- */
+.rendas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(12px, 1.6vw, 26px); margin-top: clamp(16px, 4vh, 40px); }
+.renda { border-top: 1px solid var(--linha); padding-top: 16px; display: grid; gap: 4px; }
+.renda span { color: var(--texto-suave); font-size: .9em; }
+.renda strong { font-family: var(--fonte-titulo); font-size: clamp(22px, 2.2vw, 40px); font-variant-numeric: tabular-nums; }
+.renda em { font-style: normal; font-size: .75em; color: var(--azul-300); }
+.renda-destaque { border-top: 3px solid var(--vermelho-2); }
+.renda-destaque strong { color: #FF8A7A; }
+
+/* ---------- Gráficos ---------- */
+.graf { position: relative; width: 100%; }
+.graf svg { display: block; overflow: visible; }
+.graf-titulo { margin: 0 0 6px; font-size: .8em; color: var(--texto-suave); }
+.graf-grade { stroke: rgba(255,255,255,.08); stroke-width: 1; }
+.graf-zero { stroke: rgba(255,255,255,.35); stroke-width: 1; }
+.graf-eixo { fill: var(--azul-300); font-size: 14px; font-family: var(--fonte-texto); }
+.graf-rotulo { fill: var(--texto); font-size: 15px; font-weight: 700; font-family: var(--fonte-titulo); }
+.graf-rotulo-nome { fill: var(--azul-300); font-size: 12px; font-family: var(--fonte-texto); }
+.graf-guia { stroke: rgba(255,255,255,.45); stroke-width: 1; stroke-dasharray: 3 3; }
+.graf-barra { cursor: pointer; outline: none; }
+.graf-barra:hover path, .graf-barra:focus path { opacity: 1; }
+.graf-tip {
+  position: absolute; pointer-events: none; background: #0B1730; border: 1px solid var(--linha); border-radius: 8px;
+  padding: 8px 10px; font-size: 13px; line-height: 1.35; white-space: nowrap; z-index: 2; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.graf-tip-titulo { color: var(--azul-300); margin-bottom: 2px; }
+.graf-tip-linha { display: flex; align-items: center; gap: 6px; }
+.graf-tip-linha span { color: var(--texto-suave); }
+.graf-tip-chave { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+
+@media (max-width: 860px) {
+  .dois, .tres, .usos { grid-template-columns: 1fr; }
+  .rendas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* ---------- Celular e telas estreitas ---------- */
 @media (max-width: 860px) {
   body { overflow: auto; }

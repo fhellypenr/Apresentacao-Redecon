@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#101F3D">
+  <title>Redecon Consórcios</title>
+  <link rel="icon" href="img/logo-negativo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilo.css?v=0.1.0">
+</head>
+<body>
+  <main class="palco" aria-live="polite"></main>
+
+  <nav class="barra" aria-label="Navegação">
+    <img class="barra-logo" src="img/logo-branco-horizontal.png" alt="Redecon">
+    <div class="progresso" aria-label="Módulos"></div>
+    <span class="status-dados"></span>
+    <div class="barra-acoes">
+      <button class="icone" id="bt-ant" aria-label="Tela anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="icone" id="bt-prox" aria-label="Próxima tela"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button class="icone" id="bt-menu" aria-label="Roteiro"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+      <button class="icone" id="bt-ajustes" aria-label="Ajustes da reunião"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 3.8-6 7-6s6 2 7 6"/></svg></button>
+      <button class="icone" id="bt-tela" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </nav>
+
+  <aside class="painel" id="menu" aria-label="Roteiro">
+    <button class="icone painel-fechar" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2>Roteiro</h2>
+    <div id="lista-menu"></div>
+  </aside>
+
+  <aside class="painel" id="ajustes" aria-label="Ajustes da reunião">
+    <button class="icone painel-fechar" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2>Ajustes da reunião</h2>
+    <div class="campo"><label for="aj-cliente">Nome do cliente</label><input id="aj-cliente" type="text" autocomplete="off" placeholder="Opcional"></div>
+    <div class="campo"><label for="aj-apresentador">Apresentador</label><select id="aj-apresentador"></select></div>
+    <div class="campo"><label for="aj-foco">Foco da reunião</label>
+      <select id="aj-foco">
+        <option value="geral">Geral (todos os caminhos)</option>
+        <option value="aquisicao">Aquisição</option>
+        <option value="poupanca">Poupança</option>
+        <option value="investimento">Investimento</option>
+      </select>
+    </div>
+    <div class="dados-info">
+      <strong>Dados da apresentação</strong>
+      <div id="dados-info"></div>
+      <button class="btn" id="bt-atualizar">Atualizar dados</button>
+    </div>
+  </aside>
+
+  <script src="js/config.js?v=0.1.0"></script>
+  <script src="js/padrao.js?v=0.1.0"></script>
+  <script src="js/dados.js?v=0.1.0"></script>
+  <script src="js/app.js?v=0.1.0"></script>
+</body>
+</html>

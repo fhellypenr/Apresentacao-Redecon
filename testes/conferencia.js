@@ -92,5 +92,8 @@ igual("Sem seguro, total de seguro = 0", semSeg.seguroTotal, 0);
 // mês 37 é aniversário do grupo: o saldo reajusta 5% antes do seguro
 igual("Com seguro, 1º mês = 0,055% do saldo reajustado", comSeg.meses[36].seguro, comSeg.contemplacao.saldoDevedor * 1.05 * 0.00055);
 
+// 13. TIR: aplicar 100 e receber 110 um mês depois = 10% ao mês
+igual("TIR simples (%)", M.tir([-100, 110]) * 100, 10, 0.001);
+
 console.log(falhas ? `\n${falhas} conferência(s) com erro.` : "\nTodas as conferências bateram.");
 process.exit(falhas ? 1 : 0);

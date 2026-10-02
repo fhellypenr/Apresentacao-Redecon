@@ -43,11 +43,23 @@
     t.style.top = Math.max(0, y - 10) + "px";
   }
 
+  // Legenda acima do gráfico (sempre que houver duas séries ou mais)
+  function legenda(caixa, itens) {
+    const l = document.createElement("div"); l.className = "graf-legenda";
+    for (const it of itens) {
+      const s = document.createElement("span");
+      const k = document.createElement("i"); k.className = "graf-leg-" + (it.tipo || "linha"); k.style.background = it.cor;
+      s.appendChild(k); s.appendChild(document.createTextNode(it.nome)); l.appendChild(s);
+    }
+    caixa.appendChild(l);
+  }
+
   // ---------- Linhas ----------
   // series: [{ nome, cor, valores: [números] }], rotulosX: [textos], fmtY(v), fmtX(i)
-  function linhas(caixa, { series, rotulosX, fmtY, fmtTip, altura = 300, yMin = null, marcarFim = true }) {
+  function linhas(caixa, { series, rotulosX, fmtY, fmtTip, altura = 300, yMin = null, marcarFim = true, selecionado = null, aoEscolher = null }) {
     caixa.classList.add("graf");
     caixa.replaceChildren();
+    if (series.length > 1) legenda(caixa, series);
     const W = Math.max(300, caixa.clientWidth || 800), H = altura;
     if (W < 560) marcarFim = false; // tela estreita: sem rótulos na ponta, a leitura fica no toque
     const m = { t: 16, r: marcarFim ? 150 : 16, b: 34, l: 74 };
@@ -60,7 +72,7 @@
     const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", height: H, role: "img" }, caixa);
     // grade
     for (const v of tk) {
-      el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: "graf-grade" }, svg);
+      el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: Math.abs(v) < 1e-9 && lo < 0 ? "graf-zero" : "graf-grade" }, svg);
       el("text", { x: m.l - 10, y: Y(v) + 4, "text-anchor": "end", class: "graf-eixo" }, svg).textContent = fmtY(v);
     }
     const passoX = Math.max(1, Math.ceil(n / 8));
@@ -78,6 +90,11 @@
         nm.textContent = s.nome;
       }
     });
+    // ponto escolhido (fica marcado)
+    if (selecionado != null && selecionado >= 0 && selecionado < n) {
+      el("line", { x1: X(selecionado), x2: X(selecionado), y1: m.t, y2: H - m.b, class: "graf-escolhido" }, svg);
+      series.forEach(s => el("circle", { cx: X(selecionado), cy: Y(s.valores[selecionado]), r: 7, fill: s.cor, stroke: "#FFFFFF", "stroke-width": 2 }, svg));
+    }
     // camada de leitura
     const guia = el("line", { y1: m.t, y2: H - m.b, class: "graf-guia", visibility: "hidden" }, svg);
     const pontos = series.map(s => el("circle", { r: 5, fill: s.cor, stroke: "#101F3D", "stroke-width": 2, visibility: "hidden" }, svg));
@@ -99,6 +116,11 @@
       mostrar(foco);
     });
     area.addEventListener("pointerleave", esconder);
+    if (aoEscolher) {
+      area.style.cursor = "pointer";
+      area.addEventListener("click", () => aoEscolher(Math.max(0, Math.min(n - 1, foco))));
+      area.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); aoEscolher(Math.max(0, Math.min(n - 1, foco))); } });
+    }
     area.addEventListener("focus", () => mostrar(foco));
     area.addEventListener("blur", esconder);
     area.addEventListener("keydown", e => {
@@ -108,12 +130,15 @@
 
   // ---------- Barras verticais ----------
   // itens: [{ rotulo, valor, destaque }]; valores negativos ficam abaixo da linha zero.
-  function barras(caixa, { itens, fmtY, fmtTip, altura = 300, aoEscolher, corPos = "#F84434", corNeg = "#5B8DEF" }) {
+  // linha (opcional): { nome, cor, valores } desenhada por cima das barras, no mesmo eixo.
+  // Cada item pode trazer cor própria (it.cor); sem ela, positivo = corPos e negativo = corNeg.
+  function barras(caixa, { itens, fmtY, fmtTip, altura = 300, aoEscolher, corPos = "#F84434", corNeg = "#5B8DEF", linha = null, legendaItens = null }) {
     caixa.classList.add("graf");
     caixa.replaceChildren();
+    if (legendaItens) legenda(caixa, legendaItens);
     const W = Math.max(320, caixa.clientWidth || 800), H = altura;
     const m = { t: 18, r: 12, b: 34, l: 74 };
-    const vals = itens.map(i => i.valor);
+    const vals = itens.map(i => i.valor).concat(linha ? linha.valores : []);
     const tk = ticks(Math.min(0, ...vals), Math.max(0, ...vals));
     const lo = tk[0], hi = tk[tk.length - 1];
     const Y = v => m.t + (H - m.t - m.b) * (1 - (v - lo) / (hi - lo || 1));
@@ -137,10 +162,12 @@
         : `M${x},${y0} V${top + h - r} Q${x},${top + h} ${x + r},${top + h} H${x + bw - r} Q${x + bw},${top + h} ${x + bw},${top + h - r} V${y0} Z`;
       const g = el("g", { class: "graf-barra" + (it.destaque ? " destaque" : ""), tabindex: 0 }, svg);
       el("rect", { x: cx - faixa / 2, y: m.t, width: faixa, height: H - m.t - m.b, fill: "transparent" }, g);
-      el("path", { d, fill: it.valor >= 0 ? corPos : corNeg, opacity: it.destaque ? 1 : 0.55 }, g);
+      el("path", { d, fill: it.cor || (it.valor >= 0 ? corPos : corNeg), opacity: it.destaque ? 1 : 0.55 }, g);
       if (i % passoX === 0) el("text", { x: cx, y: H - 10, "text-anchor": "middle", class: "graf-eixo" }, svg).textContent = it.rotulo;
       const mostrar = () => {
-        preencherTip(tip, it.rotulo, [{ cor: it.valor >= 0 ? corPos : corNeg, valor: (fmtTip || fmtY)(it.valor), nome: it.nomeTip || "" }]);
+        const linhasTip = [{ cor: it.cor || (it.valor >= 0 ? corPos : corNeg), valor: (fmtTip || fmtY)(it.valor), nome: it.nomeTip || "" }];
+        if (linha) linhasTip.push({ cor: linha.cor, valor: (fmtTip || fmtY)(linha.valores[i]), nome: linha.nome });
+        preencherTip(tip, it.rotulo, linhasTip);
         const rr = svg.getBoundingClientRect(), es = rr.width / W;
         posicionarTip(tip, caixa, cx * es, top * es);
       };
@@ -153,6 +180,11 @@
         g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); aoEscolher(i); } });
       }
     });
+    if (linha) {
+      const pts = linha.valores.map((v, i) => `${m.l + faixa * i + faixa / 2},${Y(v)}`).join(" ");
+      el("polyline", { points: pts, fill: "none", stroke: linha.cor, "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round", "pointer-events": "none" }, svg);
+      linha.valores.forEach((v, i) => el("circle", { cx: m.l + faixa * i + faixa / 2, cy: Y(v), r: 4, fill: linha.cor, stroke: "#101F3D", "stroke-width": 2, "pointer-events": "none" }, svg));
+    }
   }
 
   window.Graficos = { linhas, barras };

@@ -38,7 +38,7 @@ button { font: inherit; color: inherit; }
 .palco { position: fixed; inset: 0 0 var(--barra) 0; }
 .slide {
   position: absolute; inset: 0;
-  padding: clamp(28px, 6vh, 72px) var(--margem) clamp(20px, 4vh, 48px);
+  padding: clamp(18px, 4vh, 56px) var(--margem) clamp(12px, 2.4vh, 32px);
   display: flex; flex-direction: column;
   opacity: 0; visibility: hidden;
   transition: opacity .35s ease, visibility 0s linear .35s;
@@ -47,7 +47,7 @@ button { font: inherit; color: inherit; }
 .slide.ativo { opacity: 1; visibility: visible; transition: opacity .35s ease; }
 
 h1, h2, h3 { font-family: var(--fonte-titulo); margin: 0; letter-spacing: -0.02em; }
-.titulo { font-size: clamp(28px, 3.4vw, 60px); font-weight: 700; line-height: 1.08; max-width: 22ch; }
+.titulo { font-size: clamp(26px, 2.6vw, 50px); font-weight: 700; line-height: 1.1; max-width: none; text-wrap: balance; }
 .sub { color: var(--texto-suave); margin: .6em 0 0; max-width: 60ch; }
 .aviso { margin-top: auto; padding-top: 18px; font-size: .72em; color: var(--azul-300); max-width: 90ch; }
 
@@ -206,7 +206,7 @@ h1, h2, h3 { font-family: var(--fonte-titulo); margin: 0; letter-spacing: -0.02e
 
 
 /* ---------- Pilares: controles ---------- */
-.controles { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-end; margin: clamp(14px, 2.5vh, 26px) 0 clamp(10px, 2vh, 20px); }
+.controles { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: flex-end; margin: clamp(8px, 1.6vh, 20px) 0 clamp(8px, 1.6vh, 16px); font-size: .92em; }
 .ctl { display: grid; gap: 4px; font-size: .78em; color: var(--azul-300); position: relative; }
 .ctl input, .ctl select, .mini-ctl input {
   font: inherit; font-size: 1.15em; color: var(--texto); background: rgba(255,255,255,.05); border: 1px solid var(--linha);
@@ -224,11 +224,11 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 
 /* ---------- Pilares: números ---------- */
 .dois { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.6fr); gap: clamp(20px, 3.5vw, 64px); align-items: start; }
-.nums { display: grid; gap: clamp(12px, 2.2vh, 22px); }
+.nums { display: grid; gap: clamp(8px, 1.6vh, 18px); }
 .num { display: grid; gap: 2px; }
 .num-rotulo { font-size: .8em; color: var(--texto-suave); }
 .num-valor { font-family: var(--fonte-titulo); font-weight: 700; font-size: clamp(20px, 1.8vw, 34px); line-height: 1.15; font-variant-numeric: tabular-nums; }
-.num.grande .num-valor { font-size: clamp(28px, 2.8vw, 52px); }
+.num.grande .num-valor { font-size: clamp(26px, 2.5vw, 48px); }
 .num.positivo .num-valor { color: #FF8A7A; }
 .num-nota { font-size: .72em; color: var(--azul-300); }
 .premissas { margin-top: auto; padding-top: 14px; font-size: .68em; color: var(--azul-300); max-width: 120ch; }
@@ -241,7 +241,7 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 .uso p { margin: 0; color: var(--texto-suave); font-size: 1.1em; max-width: 30ch; }
 .usos-rodape { margin-bottom: auto; }
 .tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 2vw, 32px); align-items: stretch; }
-.opcao { border: 1px solid var(--linha); border-radius: 14px; padding: clamp(16px, 2vw, 30px); display: grid; gap: clamp(10px, 1.8vh, 18px); align-content: start; }
+.opcao { border: 1px solid var(--linha); border-radius: 14px; padding: clamp(12px, 1.6vw, 26px); display: grid; gap: clamp(6px, 1.3vh, 14px); align-content: start; }
 .opcao h3 { font-size: clamp(18px, 1.5vw, 28px); font-weight: 700; }
 .opcao-destaque { border: 2px solid var(--vermelho-2); background: rgba(248, 68, 52, .07); }
 .mini-ctl { display: flex; gap: 14px; flex-wrap: wrap; font-size: .8em; color: var(--azul-300); }
@@ -283,6 +283,48 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
   .rendas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+
+/* ---------- Rodapé das telas (sentido + premissas + aviso) ---------- */
+.rodape { margin-top: auto; padding-top: clamp(10px, 2vh, 18px); border-top: 1px solid var(--linha); font-size: .66em; color: var(--azul-300); }
+.rodape-sentido { margin: 0 0 6px; color: var(--texto-suave); font-size: 1.12em; max-width: 110ch; }
+.rodape-lista { margin: 0; padding-left: 1.1em; columns: 3 30ch; column-gap: 36px; }
+.rodape-lista li { break-inside: avoid; margin-bottom: 2px; }
+.rodape-aviso { margin: 6px 0 0; font-style: italic; }
+.slide > .rodape, .slide > [data-alvo="rodape"] { margin-top: auto; }
+[data-alvo="rodape"] { margin-top: auto; }
+
+/* ---------- Blocos novos dos pilares ---------- */
+.usos-rodape { color: var(--texto-suave); margin: 0 0 auto; }
+.opcao-premissa { margin: auto 0 0; padding-top: 10px; border-top: 1px dashed var(--linha); font-size: .7em; color: var(--azul-300); }
+.nums-titulo { margin: 0; font-family: var(--fonte-titulo); font-weight: 600; color: var(--texto-suave); }
+.lado-a-lado { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.orientacao { border-left: 4px solid var(--azul-300); padding: 8px 14px; background: rgba(142,160,196,.08); border-radius: 0 8px 8px 0; }
+.orientacao strong { display: block; font-family: var(--fonte-titulo); }
+.orientacao p { margin: 4px 0 0; font-size: .85em; color: var(--texto-suave); }
+.ritmo { margin: 0; font-size: .8em; color: var(--texto-suave); }
+.ritmo strong { color: var(--texto); }
+.topo-linha { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 32px; margin-bottom: clamp(8px, 1.6vh, 16px); }
+.topo-linha .controles { margin-bottom: 0; }
+.resumo-linha { display: flex; flex-wrap: wrap; gap: 8px 32px; }
+.resumo-linha .num-valor { font-size: clamp(18px, 1.5vw, 28px); }
+.ctl-base { margin: 0 0 6px; }
+.ctl-base .seg button { font-size: .95em; }
+.mini-ctl select { font: inherit; color: var(--texto); background: rgba(255,255,255,.05); border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; }
+.mini-ctl select option { color: #101F3D; }
+.ctl select option { color: #101F3D; }
+.graf-legenda { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--texto-suave); margin-bottom: 6px; }
+.graf-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.graf-leg-linha { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+.graf-leg-barra { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.graf-escolhido { stroke: rgba(255,255,255,.6); stroke-width: 1.5; }
+@media (max-width: 860px) { .lado-a-lado { grid-template-columns: 1fr; } .rodape-lista { columns: 1; } }
+
+.resultado { margin: 0; font-family: var(--fonte-titulo); font-weight: 700; font-size: clamp(17px, 1.4vw, 26px); }
+.resultado.positivo { color: #FF8A7A; }
+.mini-ctl { gap: 6px 12px; }
+.mini-ctl input { width: 4.8em; padding: 4px 8px; }
+.mini-ctl select { padding: 4px 6px; }
+.opcao .num-valor { font-size: clamp(18px, 1.6vw, 30px); }
 /* ---------- Celular e telas estreitas ---------- */
 @media (max-width: 860px) {
   body { overflow: auto; }
@@ -294,4 +336,12 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 }
 @media (max-height: 560px) and (min-width: 861px) {
   .placar-num { font-size: 18vh; }
+}
+
+/* Telas baixas (notebook, iPad deitado): texto um pouco menor para caber sem rolagem */
+@media (max-height: 860px) and (min-width: 861px) {
+  body { font-size: clamp(14px, 0.7vw + 8px, 19px); }
+  .titulo { font-size: clamp(22px, 2.2vw, 40px); }
+  .num-valor { font-size: clamp(17px, 1.5vw, 28px); }
+  .num.grande .num-valor { font-size: clamp(22px, 2.1vw, 38px); }
 }

@@ -171,6 +171,20 @@
     return { receitaBruta: bruta, custos: bruta * custos, liquido: bruta * (1 - custos) };
   }
 
+  // ---------- Taxa interna de retorno (ao mês) ----------
+  // fluxos[t] = dinheiro no mês t (negativo = saída, positivo = entrada). Retorna null se não houver solução.
+  function tir(fluxos) {
+    const vpl = r => fluxos.reduce((acc, f, t) => acc + f / Math.pow(1 + r, t), 0);
+    let lo = -0.99, hi = 10, flo = vpl(lo), fhi = vpl(hi);
+    if (flo * fhi > 0) return null;
+    for (let k = 0; k < 200; k++) {
+      const mid = (lo + hi) / 2, fm = vpl(mid);
+      if (Math.abs(fm) < 1e-7) return mid;
+      if (fm * flo > 0) { lo = mid; flo = fm; } else { hi = mid; }
+    }
+    return (lo + hi) / 2;
+  }
+
   // ---------- Funil ----------
   function melhorModalidade(funil, mesesEmDia) {
     const ok = funil.filter(f => f.meses <= mesesEmDia);
@@ -179,7 +193,7 @@
 
   const Motor = { mensal, fatorReajuste, parcela, creditoPelaParcela, taxaAdmMes, simularCota, taxaEfetiva,
     vendaCarta, aliquotaIR, aplicarAportes, financiamentoSAC, previdencia, rendaVitalicia,
-    aluguelTradicional, shortStay, melhorModalidade };
+    aluguelTradicional, shortStay, melhorModalidade, tir };
   if (typeof module !== "undefined" && module.exports) module.exports = Motor;
   else raiz.Motor = Motor;
 })(typeof window !== "undefined" ? window : globalThis);

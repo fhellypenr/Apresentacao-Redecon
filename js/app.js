@@ -189,16 +189,37 @@
       $$(".passo", el).forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.m === m)));
       $(".placar-modalidade", el).textContent = melhor.modalidade;
       $(".placar-meses", el).textContent = m === 0 ? "Com a parcela do mês em dia." : `Com ${m} parcelas seguidas em dia.`;
+      placar.classList.toggle("no-topo", m === Math.max(...D.funil.map(f => f.meses)));
       contar(Math.round(melhor.concorrencia * 100));
     }
-    $$(".passo", el).forEach(b => b.addEventListener("click", () => aplicar(+b.dataset.m)));
+    // Ao entrar na tela, o funil sobe sozinho de 0 até o último degrau (Fidelidade 4).
+    const passos = [...new Set(D.funil.map(f => f.meses))].sort((a, b) => a - b);
+    const topo = passos[passos.length - 1];
+    let timer = null;
+    function parar() { clearTimeout(timer); timer = null; }
+    function subir() {
+      parar();
+      if (reduzir) { aplicar(topo); return; }
+      let k = 0;
+      aplicar(passos[0]);
+      const proximo = () => {
+        k++;
+        if (k >= passos.length) return;
+        aplicar(passos[k]);
+        timer = setTimeout(proximo, 1100);
+      };
+      timer = setTimeout(proximo, 1300);
+    }
+    $$(".passo", el).forEach(b => b.addEventListener("click", () => { parar(); aplicar(+b.dataset.m); }));
     $('[data-acao="atraso"]', el).addEventListener("click", () => {
+      parar();
       placar.classList.remove("zerado"); void placar.offsetWidth; placar.classList.add("zerado");
       aplicar(0);
       $(".placar-meses", el).textContent = "Um dia de atraso zerou a contagem.";
     });
-    aplicar(0);
-    el._reiniciar = () => aplicar(0);
+    aplicar(topo);
+    el._reiniciar = subir;
+    el._sair = parar;
   }
 
   // ---------- Montagem ----------
@@ -236,6 +257,8 @@
     const antes = atual;
     atual = i;
     $$(".slide").forEach(s => s.classList.toggle("ativo", +s.dataset.i === i));
+    const anterior = $(`.slide[data-i="${antes}"]`);
+    if (anterior && anterior._sair && antes !== i) anterior._sair();
     const el = $(`.slide[data-i="${i}"]`);
     if (el && el._reiniciar && (inicial || antes !== i)) el._reiniciar();
     const sec = LISTA[i].secao;

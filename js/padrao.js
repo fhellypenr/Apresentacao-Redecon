@@ -25,7 +25,7 @@ window.DADOS_PADRAO = {
     { modalidade: "Fidelidade 1", condicao: "6 parcelas consecutivas em dia", meses: 6, concorrencia: 0.50, obs: "" },
     { modalidade: "Fidelidade 2", condicao: "12 parcelas consecutivas em dia", meses: 12, concorrencia: 0.35, obs: "" },
     { modalidade: "Fidelidade 3", condicao: "18 parcelas consecutivas em dia", meses: 18, concorrencia: 0.15, obs: "" },
-    { modalidade: "Fidelidade 4", condicao: "24 parcelas consecutivas em dia", meses: 24, concorrencia: 0.07, obs: "Só em grupos novos" }
+    { modalidade: "Fidelidade 4", condicao: "24 parcelas consecutivas em dia", meses: 24, concorrencia: 0.07, obs: "" }
   ],
   ir: [
     { ate: 180, aliquota: 0.225 }, { ate: 360, aliquota: 0.20 },

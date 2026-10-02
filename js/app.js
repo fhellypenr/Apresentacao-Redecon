@@ -297,7 +297,7 @@
       <dl>
         <dt>Origem</dt><dd>${origem}</dd>
         <dt>Carregado em</dt><dd>${Dados.origem === "padrao" ? "versão de " + esc(Dados.quando) : quandoTxt}</dd>
-        <dt>Selic</dt><dd>${fmtPct(p.selic, 2)}${p.selic_data ? " (" + esc(p.selic_data) + ")" : ""}</dd>
+        <dt>Selic</dt><dd>${fmtPct(p.selic, 2)} (Banco Central)</dd>
         <dt>Crédito rendendo</dt><dd>${fmtPct(p.rend_credito_am, 2)} ao mês</dd>
         <dt>Reajuste</dt><dd>${fmtPct(p.reajuste_aa, 1)} ao ano</dd>
       </dl>

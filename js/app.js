@@ -315,7 +315,7 @@
   // ---------- Animações de entrada ----------
   const REVELA = ".titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .mapa-ilustra, .opcao, .caminho, .pilar-sint, " +
     ".plano-card, .proximo, .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, " +
-    ".placar, .degrau, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
+    ".placar, .degrau, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
   const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
   function animarEntrada(el) {
     if (semMovimento || !el) return;
@@ -330,7 +330,7 @@
   }
   // Números grandes sobem de zero até o valor (ex.: "+3.200", "+R$ 27 bi")
   function contarNumeros(el) {
-    $$(".stat strong", el).forEach(n => {
+    $$(".stat strong, .economia strong", el).forEach(n => {
       const orig = n.dataset.orig || n.textContent;
       n.dataset.orig = orig;
       const m = orig.match(/\d[\d.]*(,\d+)?/);

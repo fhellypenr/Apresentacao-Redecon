@@ -37,34 +37,40 @@
   };
 
   // ---------- Virada de chave ----------
+  const ICO = {
+    casa: '<path d="M8 26 28 10l20 16"/><path d="M14 22v22h28V22"/><path d="M24 44V32h8v12"/>',
+    obra: '<path d="M10 46h36"/><path d="M14 46V24h14v22"/><path d="M28 30h14v16"/><path d="M18 30h6M18 36h6M32 36h6"/><path d="M21 24V14l7-4"/>',
+    venda: '<path d="M10 30 26 14h16v16L26 46z"/><circle cx="35" cy="21" r="3"/>',
+    rende: '<path d="M10 42 22 30l8 8 16-18"/><path d="M36 20h10v10"/>',
+    aluguel: '<rect x="10" y="14" width="36" height="30" rx="4"/><path d="M10 22h36"/><path d="M19 32h8M19 37h14"/>',
+    sorteio: '<circle cx="28" cy="28" r="17"/><path d="M28 18v10l7 5"/>',
+    apoio: '<circle cx="20" cy="18" r="6"/><circle cx="36" cy="18" r="6"/><path d="M8 44c1-8 6-12 12-12s11 4 12 12"/><path d="M28 34c2-1.5 5-2 8-2 6 0 11 4 12 12"/>',
+    escudo: '<path d="M28 8 44 14v12c0 10-7 17-16 22-9-5-16-12-16-22V14z"/><path d="M21 28l5 5 10-10"/>',
+    caminhos: '<path d="M28 46V30"/><path d="M28 30 14 16"/><path d="M28 30 42 16"/><path d="M14 16h6M14 16v6M42 16h-6M42 16v6"/>',
+    grafico: '<path d="M10 44h36"/><rect x="14" y="30" width="6" height="14"/><rect x="25" y="22" width="6" height="22"/><rect x="36" y="14" width="6" height="30"/>'
+  };
+  const icone = k => `<svg class="ico" viewBox="0 0 56 56" aria-hidden="true">${ICO[k] || ICO.casa}</svg>`;
+  const ICONES_HOJE = ["casa", "venda", "rende", "aluguel", "sorteio", "apoio"];
+
+  // ---------- Virada de chave: o consórcio do passado × o de hoje ----------
   const virada = {
     id: "virada", nome: "Do tradicional à inteligência financeira",
-    html: ctx => {
-      const p = ctx.D.parametros, pz = ctx.D.prazos.find(x => +x.prazo === +(p.ex_prazo || 220)) || ctx.D.prazos[0];
-      const cred = p.ex_credito || 1e6;
-      const meia = Motor.parcela({ credito: cred, prazo: +pz.prazo, taxaTotal: pz.taxa_adm + pz.fundo_reserva, meia: true });
-      return `
+    html: ctx => `
       <h2 class="titulo">${ctx.T("virada_titulo")}</h2>
-      <div class="virada-bloco centro-vertical">
-        <div class="virada">
-          <div class="virada-antes">
-            <h3>${ctx.T("virada_antes_t")}</h3>
-            <div class="ccm"><span>Casa</span><span>Carro</span><span>Moto</span></div>
-            <p>${ctx.T("virada_antes")}</p>
-          </div>
-          <div class="virada-seta" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 24h28M28 14l10 10-10 10"/></svg></div>
-          <div class="virada-depois">
-            <h3>${ctx.T("virada_depois_t")}</h3>
-            <p class="virada-frase">${ctx.T("virada_frase")}</p>
-            <p>${ctx.T("virada_depois")}</p>
-          </div>
+      <div class="virada centro-vertical">
+        <div class="virada-antes">
+          <span class="carimbo" aria-hidden="true"></span>
+          <h3>${ctx.T("virada_antes_t")}</h3>
+          <div class="ccm"><span>Casa</span><span>Carro</span><span>Moto</span></div>
+          <p>${ctx.T("virada_antes")}</p>
         </div>
-        <div class="virada-faixa">
-          <p class="virada-exemplo">Exemplo: <strong>${ctx.fmtReal(cred)}</strong> de crédito por <strong>${ctx.fmtReal(meia, 2)}</strong> de meia parcela (${pz.prazo} meses).</p>
-          <ul class="chips">${lista(ctx.T("virada_usos")).map(u => `<li>${u}</li>`).join("")}</ul>
+        <div class="virada-seta" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 24h28M28 14l10 10-10 10"/></svg></div>
+        <div class="virada-depois">
+          <h3>${ctx.T("virada_depois_t")}</h3>
+          <p class="virada-frase">${ctx.T("virada_frase")}</p>
+          <ul class="hoje">${lista(ctx.T("virada_usos")).map((u, i) => `<li>${icone(ICONES_HOJE[i] || "casa")}<span>${u}</span></li>`).join("")}</ul>
         </div>
-      </div>`;
-    }
+      </div>`
   };
 
   // ---------- Mapa do API ----------
@@ -89,39 +95,18 @@
 
   // ---------- Síntese ----------
   const sintese = {
-    id: "sintese", nome: "Segurança, liquidez e rendimento",
-    html: ctx => `
+    id: "sintese", nome: "Segurança, liberdade de escolha e rendimento",
+    html: ctx => {
+      const col = (k, ico) => `
+        <div class="pilar-sint">
+          ${icone(ico)}
+          <h3>${ctx.T("sint_" + k + "_t")}</h3>
+          <p class="sint-frase">${ctx.T("sint_" + k + "_frase")}</p>
+          <ul>${lista(ctx.T("sintese_" + k)).map(i => `<li>${i}</li>`).join("")}</ul>
+        </div>`;
+      return `
       <h2 class="titulo">${ctx.T("sintese_titulo")}</h2>
-      <div class="sintese centro-vertical" data-alvo="sint"></div>
-      <p class="sint-premissa" data-alvo="prem"></p>
-      <p class="aviso">${ctx.T("aviso_padrao")}</p>`,
-    iniciar: (el, ctx) => {
-      const desenhar = () => {
-        if (!el.isConnected) { document.removeEventListener("redecon:estado", desenhar); return; }
-        const H = A(), e = ctx.estado, f = ctx.fmtReal, b = H.base(ctx);
-        const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
-        const c = sc.contemplacao;
-        const venda = Motor.vendaCarta({ creditoDisponivel: c.creditoDisponivel, pagoAteContemplar: c.pagoTotal, agio: e.agio });
-        const vezes = c.creditoDisponivel / c.pagoTotal;
-        const vezesTxt = vezes >= 10 ? Math.floor(vezes) + "×" : vezes.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "×";
-        const col = (n, t, stat, nota, chave) => `
-          <div class="pilar-sint">
-            <span class="sint-n">${n}</span><h3>${t}</h3>
-            <div class="stat"><strong>${stat}</strong><span>${nota}</span></div>
-            <ul>${lista(ctx.T(chave)).map(i => `<li>${i}</li>`).join("")}</ul>
-          </div>`;
-        const liq = venda.lucro > 0
-          ? col(2, "Liquidez", "+" + ctx.fmtPct(venda.lucro / c.pagoTotal), `de lucro sobre o que foi pago, vendendo a carta contemplada por ${H.moedaCurta(venda.recebe)}`, "sintese_liq")
-          : col(2, "Liquidez", H.moedaCurta(venda.recebe), "valor de venda da carta contemplada", "sintese_liq");
-        el.querySelector('[data-alvo="sint"]').innerHTML =
-          col(1, "Segurança", inst(ctx, "hs_vendas_ano"), rot(ctx, "hs_vendas_ano") + " pela HS", "sintese_seg") + liq +
-          col(3, "Rendimento", vezesTxt, `o que você pagou: o rendimento é sobre o crédito total de ${H.moedaCurta(c.creditoDisponivel)}, não sobre os ${H.moedaCurta(c.pagoTotal)} pagos`, "sintese_ren");
-        el.querySelector('[data-alvo="prem"]').textContent =
-          `Exemplo: crédito de ${f(b.credito)}, ${b.meia ? "meia parcela" : "parcela cheia"}, ${b.prazo} meses, contemplação no mês ${e.mes} ${e.modalidade === "embutido" ? "com lance embutido" : "por sorteio"} e ágio de ${ctx.fmtPct(e.agio)} na venda.`;
-      };
-      document.addEventListener("redecon:estado", desenhar);
-      el._aoMostrar = desenhar;
-      desenhar();
+      <div class="sintese centro-vertical">${col("seg", "escudo")}${col("liq", "caminhos")}${col("ren", "grafico")}</div>`;
     }
   };
 

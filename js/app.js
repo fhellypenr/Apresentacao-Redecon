@@ -192,7 +192,7 @@
         { id: "otimizar", nome: "Estratégias", html: telaOtimizar },
         { id: "compromisso", nome: "Compromissos", html: telaCompromisso }
       ] },
-      { nome: "Segurança, liquidez e rendimento", telas: [E.sintese].filter(Boolean).map(comCtx) },
+      { nome: "Segurança, liberdade e rendimento", telas: [E.sintese].filter(Boolean).map(comCtx) },
       { nome: "Casos reais", telas: casosOk && E.casos ? [comCtx(E.casos)] : [], semCasos: !casosOk },
       { nome: "Fechamento", telas: [E.fechamento].filter(Boolean).map(comCtx) },
       { nome: "Encerramento", telas: [E.encerramento].filter(Boolean).map(comCtx) }
@@ -312,16 +312,54 @@
     $$("[data-tela]", caixa).forEach(c => c.addEventListener("change", () => { telasOn[c.dataset.tela] = c.checked; salvarTelas(); montar(); }));
   }
 
+  // ---------- Animações de entrada ----------
+  const REVELA = ".titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .mapa-ilustra, .opcao, .caminho, .pilar-sint, " +
+    ".plano-card, .proximo, .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, " +
+    ".placar, .degrau, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
+  const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function animarEntrada(el) {
+    if (semMovimento || !el) return;
+    clearTimeout(el._tAnim);
+    el.classList.remove("revelar");
+    $$(REVELA, el).forEach((x, k) => x.style.setProperty("--k", Math.min(k, 14)));
+    void el.offsetWidth;
+    el.classList.add("revelar");
+    contarNumeros(el);
+    // Depois da entrada, recálculos ao vivo não repetem a animação
+    el._tAnim = setTimeout(() => el.classList.remove("revelar"), 2200);
+  }
+  // Números grandes sobem de zero até o valor (ex.: "+3.200", "+R$ 27 bi")
+  function contarNumeros(el) {
+    $$(".stat strong", el).forEach(n => {
+      const orig = n.dataset.orig || n.textContent;
+      n.dataset.orig = orig;
+      const m = orig.match(/\d[\d.]*(,\d+)?/);
+      if (!m) return;
+      const casas = m[1] ? m[1].length - 1 : 0;
+      const alvo = Number(m[0].replace(/\./g, "").replace(",", "."));
+      const t0 = performance.now(), dur = 1300;
+      const passo = t => {
+        const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        const v = (alvo * e).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+        n.textContent = orig.replace(m[0], v);
+        if (k < 1) requestAnimationFrame(passo); else n.textContent = orig;
+      };
+      requestAnimationFrame(passo);
+    });
+  }
+
   function ir(i, inicial) {
     if (i < 0 || i >= LISTA.length) return;
     const antes = atual;
     atual = i;
+    document.documentElement.style.setProperty("--dir", i >= antes ? 1 : -1);
     $$(".slide").forEach(s => s.classList.toggle("ativo", +s.dataset.i === i));
     const anterior = $(`.slide[data-i="${antes}"]`);
     if (anterior && anterior._sair && antes !== i) anterior._sair();
     const el = $(`.slide[data-i="${i}"]`);
     if (el && el._reiniciar && (inicial || antes !== i)) el._reiniciar();
     if (el && el._aoMostrar && antes !== i) el._aoMostrar();
+    if (antes !== i || inicial) animarEntrada(el);
     const sec = LISTA[i].secao;
     $$(".progresso button").forEach((b, si) => {
       b.classList.toggle("atual", si === sec);

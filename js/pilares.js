@@ -126,11 +126,11 @@
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => { let comReaj = false; reagir(el, ctx, () => {
       const b = base(ctx), f = ctx.fmtReal, p = b.p, V = b.credito;
-      // Custo final do consórcio: sem reajuste = crédito + taxas; com reajuste = todas as parcelas
-      // reajustadas ano a ano até o fim do prazo (o crédito sobe junto).
-      let totalReaj = 0;
-      for (let m = 1; m <= b.prazo; m++) totalReaj += V * Motor.fatorReajuste(m, b.reajuste) * (1 + b.taxaTotal) / b.prazo;
-      const credFinal = V * Motor.fatorReajuste(b.prazo, b.reajuste);
+      // Custo final do consórcio com reajuste, contemplado no mês escolhido (sorteio, sem lance):
+      // antes da contemplação reajustam crédito e parcela; depois, só o saldo devedor.
+      const e = ctx.estado;
+      const sR = cota(b, { mesContemplacao: e.mes, modalidade: "sorteio" });
+      const credR = sR.contemplacao.creditoDisponivel, totalR = sR.pagoTotal;
       const fin = Motor.financiamentoSAC({ valorImovel: V, entrada: p.fin_entrada, taxaAa: p.fin_taxa_aa, trAa: p.tr_aa, prazo: p.fin_prazo });
       const rendeMes = V * cdbLiquidoAm(b);
       const parc = Motor.parcela({ credito: V, prazo: b.prazo, taxaTotal: b.taxaTotal, meia: b.meia });
@@ -155,18 +155,25 @@
         </div>
         <div class="opcao opcao-destaque">
           <h3>Consórcio</h3>
-          <p class="quando">Imóvel <strong>na contemplação</strong>, por sorteio ou lance</p>
-          ${numero("Entrada", "Sem entrada")}
-          ${numero(b.meia ? "Meia parcela" : "Parcela", f(parc, 2), `${b.prazo} meses`)}
-          ${numero("Taxa de administração", ctx.fmtPct(b.taxaAdm / b.prazo, 3) + " ao mês", `${f(custoCons)} no total, sem juros`)}
-          <div class="seg seg-mini" role="group" aria-label="Custo final">
-            <button data-reaj="0" aria-pressed="${!comReaj}">Sem reajuste</button><button data-reaj="1" aria-pressed="${comReaj}">Com reajuste</button></div>
-          ${comReaj
-            ? numero("Total pago no fim", f(totalReaj), `com ${ctx.fmtPct(b.reajuste)} ao ano em todo o prazo; o crédito também sobe, para ${f(credFinal)}`)
-            : numero("Total pago no fim", f(V + custoCons), "crédito + taxas, sem reajuste")}
+          <p class="quando">Imóvel <strong>na contemplação</strong>, por sorteio ou lance · <strong>sem entrada</strong></p>
+          ${numero(b.meia ? "Meia parcela" : "Parcela", f(parc, 2), `${b.prazo} meses · taxa de ${ctx.fmtPct(b.taxaAdm / b.prazo, 3)} ao mês, sem juros`)}
+          <div class="reaj-linha">
+            <div class="seg seg-mini" role="group" aria-label="Custo final">
+              <button data-reaj="0" aria-pressed="${!comReaj}">Sem reajuste</button><button data-reaj="1" aria-pressed="${comReaj}">Com reajuste</button></div>
+            ${comReaj ? `<label class="mini-mes">contemplado no mês <input data-mes-comp type="number" min="1" max="${b.prazo - 1}" value="${e.mes}"></label>` : ""}
+          </div>
+          ${comReaj ? `
+            <div class="lado-a-lado">
+              ${numero("Crédito recebido", f(credR), `com ${Math.floor((e.mes - 1) / 12)} reajuste(s)`)}
+              ${numero("Total pago no fim", f(totalR), "depois, reajusta só o saldo")}
+            </div>
+            <p class="resultado ${totalR / credR < fin.totalPago / V ? "positivo" : ""}">R$ ${(totalR / credR).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pagos por real de imóvel, contra R$ ${(fin.totalPago / V).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} no financiamento</p>`
+            : numero("Total pago no fim", f(V + custoCons), `crédito + ${f(custoCons)} de taxas, sem juros`)}
           <p class="opcao-premissa">Taxa de administração de ${ctx.fmtPct(b.taxaAdm)} e fundo de reserva de ${ctx.fmtPct(b.taxaTotal - b.taxaAdm)}; crédito e parcela reajustados ${ctx.fmtPct(b.reajuste)} ao ano.</p>
         </div>`;
       el.querySelectorAll("[data-reaj]").forEach(x => x.addEventListener("click", () => { comReaj = x.dataset.reaj === "1"; el._redesenhar(); }));
+      const inMes = el.querySelector("[data-mes-comp]");
+      if (inMes) inMes.addEventListener("change", () => { const v = Math.round(+inMes.value); if (v >= 1) { ctx.estado.mes = Math.min(v, b.prazo - 1); ctx.mudou(); } });
       el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {});
     }); }
   };

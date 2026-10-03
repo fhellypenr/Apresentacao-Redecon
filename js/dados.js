@@ -79,6 +79,9 @@
     d.cidades = (abas.Cidades || []).slice(1).filter(l => l[0]).map(l => ({
       cidade: l[0].trim(), diaria_usd: lerValor(l[1]), ocupacao: lerValor(l[2]), fonte: (l[3] || "").trim()
     })).filter(c => c.cidade);
+    d.alternativas = (abas.Alternativas || []).slice(1).filter(l => l[0] && l[1]).map(l => ({
+      nome: l[0].trim(), taxa_am: lerValor(l[1]), obs: (l[2] || "").trim()
+    })).filter(a => a.taxa_am > 0);
     d.textos = {};
     abas.Textos.slice(1).forEach(l => { if (l[0]) d.textos[l[0].trim()] = (l[2] || "").trim(); });
     return d;
@@ -91,7 +94,7 @@
       for (const [k, v] of Object.entries(d[grupo] || {})) if (v !== null && v !== "") out[grupo][k] = v;
     }
     for (const k of Object.keys(d.indices || {})) if (d.indices[k].valor !== null) out.indices[k] = d.indices[k];
-    for (const lista of ["prazos", "funil", "ir", "cidades"]) if (d[lista] && d[lista].length) out[lista] = d[lista];
+    for (const lista of ["prazos", "funil", "ir", "cidades", "alternativas"]) if (d[lista] && d[lista].length) out[lista] = d[lista];
     return out;
   }
 
@@ -120,6 +123,7 @@
         const abas = {};
         await Promise.all(CONFIG.abas.map(async a => { abas[a] = await baixarAba(a); }));
         await baixarAba("Cidades").then(x => { abas.Cidades = x; }).catch(() => {});
+        await baixarAba("Alternativas").then(x => { abas.Alternativas = x; }).catch(() => {});
         const d = completar(montar(abas), DADOS_PADRAO);
         this.atual = derivar(d);
         this.origem = "planilha";

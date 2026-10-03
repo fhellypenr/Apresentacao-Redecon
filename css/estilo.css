@@ -391,3 +391,25 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 .nums .ritmo { font-size: .72em !important; }
 .dois-venda { grid-template-columns: minmax(300px, 1fr) minmax(0, 1.45fr); }
 @media (max-width: 860px) { .dois-venda { grid-template-columns: 1fr; } }
+
+/* Reajuste */
+.sub-largo { max-width: none; margin: 4px 0 clamp(8px, 1.6vh, 16px); font-size: .9em; }
+.custo-real { margin: 8px 0 0; color: #FF8A7A; font-size: .82em; text-align: right; }
+.custo-real strong { font-family: var(--fonte-titulo); font-size: 1.25em; }
+.custo-real span { display: block; color: var(--azul-300); font-size: .8em; }
+/* Venda: resultados mais afastados dos controles */
+.afastado { margin-top: clamp(10px, 3vh, 34px); }
+/* Aluguel: fora do tradicional */
+.aluguel-col { align-content: stretch; }
+.fora { grid-column: 2 / 4; display: grid; gap: 10px; }
+.fora-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.fora-topo .seg button { font-size: .8em; }
+.fora-dica { font-size: .72em; color: var(--azul-300); }
+.fora-caixa { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 6px 28px; border-radius: 14px; padding: clamp(10px, 1.4vh, 16px) clamp(14px, 1.6vw, 24px); }
+.fora-caixa h3 { margin: 0; font-size: clamp(16px, 1.3vw, 24px); }
+.fora-caixa .resultado { margin: 0; }
+.fora-obs { grid-column: 1 / -1; margin: 0; font-size: .7em; color: var(--azul-300); }
+@media (max-width: 860px) { .fora { grid-column: auto; } .fora-caixa { grid-template-columns: 1fr; } }
+.st-campos { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.st-campos label { grid-template-columns: none; gap: 4px; }
+.fora-caixa { grid-template-columns: auto 1fr; }

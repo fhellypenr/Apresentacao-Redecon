@@ -166,10 +166,12 @@
     id: "po-reajuste", nome: "Reajuste e custo real",
     html: ctx => `
       <h2 class="titulo">${ctx.T("po_reaj_titulo")}</h2>
+      <p class="sub sub-largo">${ctx.T("po_reaj_sub")}</p>
       ${controles(ctx, ["credito", "prazo", "parcela"])}
       <div class="dois">
         <div class="nums" data-alvo="nums"></div>
-        <div><p class="graf-titulo">Custo real da cota ano a ano (toque no gráfico para escolher o ano)</p><div data-alvo="graf"></div></div>
+        <div><p class="graf-titulo">Custo real da cota ano a ano (toque no gráfico para escolher o ano)</p><div data-alvo="graf"></div>
+          <p class="custo-real" data-alvo="custo"></p></div>
       </div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => {
@@ -191,15 +193,15 @@
           <p class="nums-titulo">${sel.ano === 0 ? "No início" : sel.rot.startsWith("Fim") ? "No fim do grupo" : "No " + sel.rot.toLowerCase()}</p>
           ${numero("Crédito", f(ls.creditoAtual), sel.ano === 0 ? "" : `+${f(ls.creditoAtual - l0.creditoAtual)} desde o início`, "grande")}
           ${numero(b.meia ? "Meia parcela" : "Parcela", f(ls.parcela, 2), sel.ano === 0 ? "" : `+${f(ls.parcela - l0.parcela, 2)} desde o início`)}
-          ${numero("Custo real da cota", pctTxt(te), "taxa efetiva: o que pagou mais o que falta, comparado ao crédito de hoje", te <= 0 ? "positivo" : "")}
           ${sobra > 0 ? numero("Crédito a mais do que o total da cota", f(sobra), `${f(totalCota)} pagos e a pagar`, "positivo") : ""}`;
+        el.querySelector('[data-alvo="custo"]').innerHTML =
+          `Custo real da cota ${sel.ano === 0 ? "no início" : sel.rot.startsWith("Fim") ? "no fim do grupo" : "no " + sel.rot.toLowerCase()}: <strong>${pctTxt(te)}</strong> <span>o que pagou mais o que falta, comparado ao crédito de hoje</span>`;
         Graficos.linhas(el.querySelector('[data-alvo="graf"]'), {
           series: [{ nome: "Custo real", cor: COR_A, valores: taxas }], rotulosX: pts.map(x => x.rot),
           fmtY: v => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%", altura: alturaGraf(),
           selecionado: anoSel, aoEscolher: i => { anoSel = i; el._redesenhar(); }
         });
         el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {
-          sentido: ctx.T("po_reaj_sentido"),
           itens: [
             `Reajuste de ${ctx.fmtPct(b.reajuste)} ao ano no crédito e na parcela.`,
             "Custo real (taxa efetiva) = (total pago + saldo a pagar) ÷ crédito atualizado − 1.",
@@ -310,7 +312,7 @@
     html: ctx => `
       <h2 class="titulo">${ctx.T("in_venda_titulo")}</h2>
       ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade", "agio"])}
-      <div class="dois dois-venda">
+      <div class="dois dois-venda afastado">
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Ganho conforme o mês da contemplação (toque numa barra para escolher)</p><div data-alvo="graf"></div></div>
       </div>
@@ -385,6 +387,7 @@
         <div class="aluguel-cons" data-alvo="resumo"></div>
         <div class="aluguel-col" data-alvo="esq"></div>
         <div class="aluguel-col" data-alvo="dir"></div>
+        <div class="fora" data-alvo="fora"></div>
       </div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => {
@@ -408,6 +411,29 @@
           <p class="resultado ${ss.liquido >= parc ? "positivo" : ""}">${cobre(ss.liquido)}</p>`;
       };
       let ultimo = null;
+      let foraSel = null; // opção "fora do tradicional" aberta (nome) ou nenhuma
+      const alternativas = () => (ctx.D.alternativas && ctx.D.alternativas.length ? ctx.D.alternativas : (window.DADOS_PADRAO.alternativas || []));
+      const desenharFora = () => {
+        const f = ctx.fmtReal, { V, parc, cobre } = ultimo, alts = alternativas();
+        const alt = alts.find(a => a.nome === foraSel);
+        const botoes = alts.map(a => `<button data-fora="${ctx.esc(a.nome)}" aria-pressed="${a.nome === foraSel}">${ctx.esc(a.nome)}</button>`).join("");
+        let caixa = "";
+        if (alt) {
+          const ganho = Motor.aluguelTradicional({ valorImovel: V, taxaAm: alt.taxa_am });
+          caixa = `<div class="fora-caixa opcao-destaque">
+            ${numero(`Aluguel por mês (${ctx.fmtPct(alt.taxa_am, 1)} do investido)`, f(ganho))}
+            <p class="resultado ${ganho >= parc ? "positivo" : ""}">${cobre(ganho)}</p>
+            ${alt.obs ? `<p class="fora-obs">${ctx.esc(alt.obs)}</p>` : ""}
+          </div>`;
+        }
+        const box = el.querySelector('[data-alvo="fora"]');
+        box.innerHTML = `<div class="fora-topo"><span class="opcao-selo">Fora do tradicional</span><div class="seg" role="group">${botoes}</div>
+          ${alt ? "" : `<span class="fora-dica">escolha uma opção para ver o cálculo</span>`}</div>${caixa}`;
+        box.querySelectorAll("[data-fora]").forEach(b => b.addEventListener("click", () => {
+          foraSel = foraSel === b.dataset.fora ? null : b.dataset.fora;
+          desenharFora();
+        }));
+      };
       const desenhar = () => {
         const b = base(ctx), f = ctx.fmtReal, e = ctx.estado, p = b.p;
         const s = cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade, comSeguro: true });
@@ -415,8 +441,6 @@
         const pm = s.meses.find(x => x.fase === "depois" && x.parcela > 0) || { parcela: 0, seguro: 0 };
         const parc = pm.parcela + (pm.seguro || 0);
         const alug = Motor.aluguelTradicional({ valorImovel: V, taxaAm: p.aluguel_am });
-        const taxaBarr = p.aluguel_barracao_am || 0.01;
-        const barr = Motor.aluguelTradicional({ valorImovel: V, taxaAm: taxaBarr });
         const cobre = x => x >= parc ? `paga a parcela e sobram ${f(x - parc)}` : `cobre ${ctx.fmtPct(x / parc)} da parcela`;
         ultimo = { V, parc, cobre };
         el.querySelector('[data-alvo="resumo"]').innerHTML = `
@@ -424,17 +448,10 @@
           ${numero("Crédito para investir", f(V), `contemplação no mês ${e.mes}`, "grande")}
           ${numero("Parcela depois de contemplar", f(parc), "com seguro prestamista")}`;
         el.querySelector('[data-alvo="esq"]').innerHTML = `
-          <div class="opcao">
+          <div class="opcao opcao-alta">
             <h3>Aluguel tradicional</h3>
             ${numero(`Aluguel por mês (${ctx.fmtPct(p.aluguel_am, 1)} do imóvel)`, f(alug))}
             <p class="resultado ${alug >= parc ? "positivo" : ""}">${cobre(alug)}</p>
-          </div>
-          <div class="opcao opcao-destaque">
-            <p class="opcao-selo">Fora do tradicional</p>
-            <h3>Barracão comercial</h3>
-            ${numero(`Aluguel por mês (${ctx.fmtPct(taxaBarr, 1)} do investido)`, f(barr))}
-            <p class="resultado ${barr >= parc ? "positivo" : ""}">${cobre(barr)}</p>
-            <p class="opcao-premissa">${ctx.T("in_barracao_obs")}</p>
           </div>`;
         const opCid = cidades.map(c => `<option ${c.cidade === st.cidade ? "selected" : ""}>${ctx.esc(c.cidade)}</option>`).join("") +
           `<option ${st.cidade === OUTRA ? "selected" : ""}>${OUTRA}</option>`;
@@ -449,6 +466,7 @@
             <div data-alvo="res-st"></div>
           </div>`;
         desenharShort(V, parc, cobre);
+        desenharFora();
         el.querySelectorAll("[data-st]").forEach(i => {
           const k = i.dataset.st;
           i.addEventListener(k === "cidade" ? "change" : "input", () => {
@@ -467,10 +485,8 @@
         el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {
           sentido: ctx.T("in_aluguel_sentido"),
           itens: [
-            `Aluguel tradicional de ${ctx.fmtPct(p.aluguel_am, 1)} e barracão de ${ctx.fmtPct(taxaBarr, 1)} ao mês sobre o crédito investido.`,
-            `Short stay: 30,4 dias por mês, ocupação padrão de ${ocupPadrao}% e ${ctx.fmtPct(p.st_custos)} de custos (plataforma, limpeza, gestão e contas).`,
-            `Diária das cidades convertida pelo dólar do dia (R$ ${dolar(ctx).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}).`,
-            "O resultado depende da localização, do tipo de imóvel e da gestão."
+            `Aluguel tradicional de ${ctx.fmtPct(p.aluguel_am, 1)} ao mês sobre o valor do imóvel; opções fora do tradicional com o percentual de cada uma.`,
+            `Short stay: 30,4 dias por mês, ocupação padrão de ${ocupPadrao}%, ${ctx.fmtPct(p.st_custos)} de custos (plataforma, limpeza, gestão e contas) e diária das cidades pelo dólar do dia (R$ ${dolar(ctx).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}).`
           ]
         });
       };

@@ -13,6 +13,10 @@ window.DADOS_PADRAO = {
     ex_credito: 1000000, ex_prazo: 220, ex_parcela: "meia"
   },
   indices: { selic: { data: "16/09/2026", valor: 13.75 }, cdi: { data: null, valor: 13.65 }, dolar: { data: null, valor: 5.2238 } },
+  alternativas: [
+    { nome: "Barracão comercial", taxa_am: 0.01, obs: "Construção de custo mais baixo, contratos longos e pouca manutenção, que costuma ficar com a empresa inquilina." },
+    { nome: "Centro de eventos", taxa_am: 0.01, obs: "Espaço locado para eventos ou para uma empresa do ramo, com contrato de longo prazo." }
+  ],
   cidades: [
     { cidade: "Curitiba", diaria_usd: 48, ocupacao: 0.398, fonte: "AirROI ago/25-jul/26" },
     { cidade: "Balneário Camboriú", diaria_usd: 132, ocupacao: 0.361, fonte: "AirROI ago/25-jul/26" },
@@ -85,6 +89,7 @@ window.DADOS_PADRAO = {
     in_selic_titulo: "Você paga {reajuste_aa} sobre o saldo e recebe rendimento sobre o crédito total",
     in_venda_titulo: "A carta contemplada tem valor de mercado",
     in_aluguel_titulo: "O aluguel pode pagar a parcela",
+    po_reaj_sub: "Enquanto a contemplação não vem, o seu dinheiro trabalha: todo ano o crédito é reajustado e o custo real da cota cai. É poupança com disciplina, sem juros, em um sistema regulado pelo Banco Central.",
     po_reaj_sentido: "Enquanto a contemplação não vem, o seu dinheiro não fica parado: o crédito cresce todo ano e o custo real da cota cai.",
     po_prev_sentido: "O consórcio também funciona como previdência: você constrói o valor pagando a parcela e, depois, transforma esse valor em renda.",
     in_selic_sentido: "O saldo devedor diminui a cada parcela, enquanto o crédito aplicado rende sobre o valor total, com a segurança de fundos de grandes bancos.",

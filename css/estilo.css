@@ -628,3 +628,8 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 .pilar-sint ul { font-size: 1em; gap: 10px; }
 .sint-frase { font-size: clamp(20px, 1.7vw, 34px); }
 @media (max-height: 860px) and (min-width: 861px) { .hoje li { font-size: .92em; } .pilar-sint ul { font-size: .9em; } }
+
+/* Deslizante do mês de contemplação */
+.mes-deslizante { display: grid; gap: 6px; font-size: .8em; color: var(--azul-300); }
+.mes-deslizante strong { color: var(--texto); font-family: var(--fonte-titulo); font-size: 1.15em; }
+.mes-deslizante input[type=range] { width: 100%; accent-color: var(--vermelho-2); height: 28px; cursor: pointer; }

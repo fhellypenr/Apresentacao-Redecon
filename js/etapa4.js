@@ -13,7 +13,8 @@
     html: ctx => `
       <h2 class="titulo">${ctx.T("quem_titulo")}</h2>
       <div class="quem centro-vertical">
-        <div class="stats stats-2">${["rd_clientes", "rd_creditos", "rd_anos", "rd_bens"].map(k => grande(ctx, k)).join("")}</div>
+        <div class="stats stats-1">${["rd_clientes", "rd_creditos", "rd_anos", "rd_bens"].map(k => grande(ctx, k)).join("")}</div>
+        <img class="mapa-ilustra" src="img/mapa-redecon.svg" alt="" aria-hidden="true">
         <div class="cadeia">
           <p class="cadeia-titulo">${ctx.T("quem_cadeia_titulo")}</p>
           ${["bc", "herval", "hs", "rd"].map((k, i) => `
@@ -29,8 +30,9 @@
     id: "quem-hs", nome: "HS no Brasil",
     html: ctx => `
       <h2 class="titulo">${ctx.T("hs_titulo")}</h2>
-      <div class="stats stats-3 centro-vertical">
-        ${["hs_vendas_ano", "hs_vendas_mes", "hs_contemplacoes", "hs_cotas", "hs_corretores", "hs_cidades"].map(k => grande(ctx, k)).join("")}
+      <div class="hs-mapa centro-vertical">
+        <img class="mapa-ilustra" src="img/mapa-hs.svg" alt="" aria-hidden="true">
+        <div class="stats stats-2">${["hs_vendas_ano", "hs_vendas_mes", "hs_contemplacoes", "hs_cotas", "hs_corretores", "hs_cidades"].map(k => grande(ctx, k)).join("")}</div>
       </div>`
   };
 
@@ -43,17 +45,21 @@
       const meia = Motor.parcela({ credito: cred, prazo: +pz.prazo, taxaTotal: pz.taxa_adm + pz.fundo_reserva, meia: true });
       return `
       <h2 class="titulo">${ctx.T("virada_titulo")}</h2>
-      <div class="virada centro-vertical">
-        <div class="virada-antes">
-          <h3>${ctx.T("virada_antes_t")}</h3>
-          <div class="ccm"><span>Casa</span><span>Carro</span><span>Moto</span></div>
-          <p>${ctx.T("virada_antes")}</p>
+      <div class="virada-bloco centro-vertical">
+        <div class="virada">
+          <div class="virada-antes">
+            <h3>${ctx.T("virada_antes_t")}</h3>
+            <div class="ccm"><span>Casa</span><span>Carro</span><span>Moto</span></div>
+            <p>${ctx.T("virada_antes")}</p>
+          </div>
+          <div class="virada-seta" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 24h28M28 14l10 10-10 10"/></svg></div>
+          <div class="virada-depois">
+            <h3>${ctx.T("virada_depois_t")}</h3>
+            <p class="virada-frase">${ctx.T("virada_frase")}</p>
+            <p>${ctx.T("virada_depois")}</p>
+          </div>
         </div>
-        <div class="virada-seta" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 24h28M28 14l10 10-10 10"/></svg></div>
-        <div class="virada-depois">
-          <h3>${ctx.T("virada_depois_t")}</h3>
-          <p class="virada-frase">${ctx.T("virada_frase")}</p>
-          <p>${ctx.T("virada_depois")}</p>
+        <div class="virada-faixa">
           <p class="virada-exemplo">Exemplo: <strong>${ctx.fmtReal(cred)}</strong> de crédito por <strong>${ctx.fmtReal(meia, 2)}</strong> de meia parcela (${pz.prazo} meses).</p>
           <ul class="chips">${lista(ctx.T("virada_usos")).map(u => `<li>${u}</li>`).join("")}</ul>
         </div>
@@ -83,23 +89,39 @@
 
   // ---------- Síntese ----------
   const sintese = {
-    id: "sintese", nome: "Segurança, rendimento e liquidez",
-    html: ctx => {
-      const p = ctx.D.parametros, est = ctx.estado;
-      const col = (n, t, stat, nota, chave) => `
-        <div class="pilar-sint">
-          <span class="sint-n">${n}</span><h3>${t}</h3>
-          <div class="stat"><strong>${stat}</strong><span>${nota}</span></div>
-          <ul>${lista(ctx.T(chave)).map(i => `<li>${i}</li>`).join("")}</ul>
-        </div>`;
-      return `
+    id: "sintese", nome: "Segurança, liquidez e rendimento",
+    html: ctx => `
       <h2 class="titulo">${ctx.T("sintese_titulo")}</h2>
-      <div class="sintese centro-vertical">
-        ${col(1, "Segurança", inst(ctx, "hs_vendas_ano"), rot(ctx, "hs_vendas_ano") + " pela HS", "sintese_seg")}
-        ${col(2, "Rendimento", A().pctTxt(p.rend_credito_am, 2) + " ao mês", "líquido, sobre o crédito total contemplado", "sintese_ren")}
-        ${col(3, "Liquidez", ctx.fmtPct(est ? est.agio : p.agio_venda) + " de ágio", "referência na venda da carta contemplada", "sintese_liq")}
-      </div>
-      <p class="aviso">${ctx.T("aviso_padrao")}</p>`;
+      <div class="sintese centro-vertical" data-alvo="sint"></div>
+      <p class="sint-premissa" data-alvo="prem"></p>
+      <p class="aviso">${ctx.T("aviso_padrao")}</p>`,
+    iniciar: (el, ctx) => {
+      const desenhar = () => {
+        if (!el.isConnected) { document.removeEventListener("redecon:estado", desenhar); return; }
+        const H = A(), e = ctx.estado, f = ctx.fmtReal, b = H.base(ctx);
+        const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
+        const c = sc.contemplacao;
+        const venda = Motor.vendaCarta({ creditoDisponivel: c.creditoDisponivel, pagoAteContemplar: c.pagoTotal, agio: e.agio });
+        const vezes = c.creditoDisponivel / c.pagoTotal;
+        const vezesTxt = vezes >= 10 ? Math.floor(vezes) + "×" : vezes.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "×";
+        const col = (n, t, stat, nota, chave) => `
+          <div class="pilar-sint">
+            <span class="sint-n">${n}</span><h3>${t}</h3>
+            <div class="stat"><strong>${stat}</strong><span>${nota}</span></div>
+            <ul>${lista(ctx.T(chave)).map(i => `<li>${i}</li>`).join("")}</ul>
+          </div>`;
+        const liq = venda.lucro > 0
+          ? col(2, "Liquidez", "+" + ctx.fmtPct(venda.lucro / c.pagoTotal), `de lucro sobre o que foi pago, vendendo a carta contemplada por ${H.moedaCurta(venda.recebe)}`, "sintese_liq")
+          : col(2, "Liquidez", H.moedaCurta(venda.recebe), "valor de venda da carta contemplada", "sintese_liq");
+        el.querySelector('[data-alvo="sint"]').innerHTML =
+          col(1, "Segurança", inst(ctx, "hs_vendas_ano"), rot(ctx, "hs_vendas_ano") + " pela HS", "sintese_seg") + liq +
+          col(3, "Rendimento", vezesTxt, `o que você pagou: o rendimento é sobre o crédito total de ${H.moedaCurta(c.creditoDisponivel)}, não sobre os ${H.moedaCurta(c.pagoTotal)} pagos`, "sintese_ren");
+        el.querySelector('[data-alvo="prem"]').textContent =
+          `Exemplo: crédito de ${f(b.credito)}, ${b.meia ? "meia parcela" : "parcela cheia"}, ${b.prazo} meses, contemplação no mês ${e.mes} ${e.modalidade === "embutido" ? "com lance embutido" : "por sorteio"} e ágio de ${ctx.fmtPct(e.agio)} na venda.`;
+      };
+      document.addEventListener("redecon:estado", desenhar);
+      el._aoMostrar = desenhar;
+      desenhar();
     }
   };
 
@@ -189,7 +211,7 @@
             H.numero("Custo do consórcio", f(V * b.taxaTotal), `taxas no prazo todo, sem juros e sem entrada (no financiamento: ${f(fin.valorEntrada)} de entrada)`)) +
           card("Poupança",
             H.numero(`Crédito em ${Math.floor((m5 - 1) / 12)} anos`, f(l5.creditoAtual), `+${f(l5.creditoAtual - V)} de reajuste`) +
-            H.numero("Custo real nesse ponto", H.pctTxt(Motor.taxaEfetiva(s0, m5)), "e segue caindo a cada ano")) +
+            `<p class="plano-frase">O crédito aumenta todo ano e o custo real da cota diminui.</p>`) +
           card("Rendimento",
             H.numero("Rende no primeiro mês", f(rende1), contemp) +
             `<p class="resultado ${rende1 >= pPos ? "positivo" : ""}">${rende1 >= pPos ? `paga a parcela de ${f(pPos)} e sobram ${f(rende1 - pPos)}` : `cobre ${ctx.fmtPct(rende1 / pPos)} da parcela de ${f(pPos)}`}</p>`) +
@@ -220,6 +242,7 @@
         <img class="fim-foto" src="img/equipe.jpg" alt="Equipe Redecon Consórcios">
         <div class="fim-texto">
           <img class="fim-logo" src="img/logo-negativo.png" alt="Redecon Consórcios">
+          <div class="fim-corpo">
           <h2 class="titulo">${ctx.T("fim_titulo")}${aj.cliente ? ", " + ctx.esc(aj.cliente) : ""}</h2>
           <p class="sub">${ctx.T("fim_sub")}</p>
           <div class="stats stats-2 stats-mini">${["rd_clientes", "rd_creditos", "rd_anos", "rd_bens"].map(k => grande(ctx, k)).join("")}</div>
@@ -228,9 +251,10 @@
             <div>
               <strong>${ii("ct_instagram")}</strong>
               <span>${ctx.T("fim_qr")}</span>
-              <span>${ii("ct_site")} · WhatsApp ${ii("ct_whatsapp")}</span>
+              <span>${ii("ct_site")} · ${ii("ct_telefone")}</span>
               ${aj.apresentador ? `<span>Apresentado por ${ctx.esc(aj.apresentador)}</span>` : ""}
             </div>
+          </div>
           </div>
         </div>
       </div>`;

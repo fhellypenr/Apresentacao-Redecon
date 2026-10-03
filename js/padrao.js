@@ -48,7 +48,7 @@ window.DADOS_PADRAO = {
     hs_vendas_ano: "+R$ 27 bi", hs_vendas_mes: "+R$ 2,5 bi", hs_contemplacoes: "+2 mil",
     rd_clientes: "+3.200", rd_creditos: "+R$ 1 bi", rd_anos: "+15", rd_bens: "+900",
     ct_instagram: "@redeconconsorcios", ct_instagram_url: "https://www.instagram.com/redeconconsorcios/",
-    ct_site: "www.redeconconsorcios.com.br", ct_whatsapp: "(46) 99128-3114"
+    ct_site: "www.redeconconsorcios.com.br", ct_telefone: "(46) 3025-3227"
   },
   inst_rot: {
     hs_corretores: "corretores ativos", hs_cidades: "cidades de atuação", hs_cotas: "cotas ativas",
@@ -80,9 +80,9 @@ window.DADOS_PADRAO = {
     mapa_aquisicao: "Comprar, construir ou quitar um financiamento, sem entrada e sem juros.",
     mapa_poupanca: "Guardar com disciplina enquanto o crédito cresce todo ano.",
     mapa_investimento: "Fazer o crédito render, vender a carta ou gerar renda com aluguel.",
-    sintese_titulo: "Segurança, rendimento e liquidez",
-    sintese_seg: "Sistema regulado e fiscalizado pelo Banco Central; Recursos do grupo separados dos recursos da administradora; Estrutura Grupo Herval, HS Consórcios e Redecon",
-    sintese_ren: "Crédito contemplado rendendo {pct_selic_credito} da Selic, sobre o valor total; Crédito e parcela reajustados {reajuste_aa} ao ano antes da contemplação; Sem juros: só taxa de administração diluída no prazo",
+    sintese_titulo: "Segurança, liquidez e rendimento",
+    sintese_seg: "Sistema regulado e fiscalizado pelo Banco Central; Recursos do grupo separados dos recursos da administradora; Você não se descapitaliza: o seu dinheiro continua aplicado; Constrói patrimônio com disciplina, parcela a parcela",
+    sintese_ren: "Crédito contemplado rendendo {pct_selic_credito} da Selic sobre o valor total; O imóvel trabalha a seu favor: o aluguel ajuda a pagar a parcela; Patrimônio em imóvel, que gera renda e pode se valorizar",
     sintese_liq: "Carta contemplada pode ser vendida com ágio; Crédito fica aplicado até você decidir o uso; Lance embutido sem tirar dinheiro do bolso",
     casos_titulo: "Quem já fez com a Redecon",
     fech_titulo: "O seu plano",

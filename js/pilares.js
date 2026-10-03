@@ -124,8 +124,13 @@
       ${controles(ctx, ["credito", "prazo", "parcela"])}
       <div class="tres" data-alvo="tres"></div>
       <div data-alvo="rodape"></div>`,
-    iniciar: (el, ctx) => reagir(el, ctx, () => {
+    iniciar: (el, ctx) => { let comReaj = false; reagir(el, ctx, () => {
       const b = base(ctx), f = ctx.fmtReal, p = b.p, V = b.credito;
+      // Custo final do consórcio: sem reajuste = crédito + taxas; com reajuste = todas as parcelas
+      // reajustadas ano a ano até o fim do prazo (o crédito sobe junto).
+      let totalReaj = 0;
+      for (let m = 1; m <= b.prazo; m++) totalReaj += V * Motor.fatorReajuste(m, b.reajuste) * (1 + b.taxaTotal) / b.prazo;
+      const credFinal = V * Motor.fatorReajuste(b.prazo, b.reajuste);
       const fin = Motor.financiamentoSAC({ valorImovel: V, entrada: p.fin_entrada, taxaAa: p.fin_taxa_aa, trAa: p.tr_aa, prazo: p.fin_prazo });
       const rendeMes = V * cdbLiquidoAm(b);
       const parc = Motor.parcela({ credito: V, prazo: b.prazo, taxaTotal: b.taxaTotal, meia: b.meia });
@@ -134,29 +139,36 @@
       el.querySelector('[data-alvo="tres"]').innerHTML = `
         <div class="opcao">
           <h3>À vista</h3>
+          <p class="quando">Imóvel <strong>na hora</strong></p>
           ${numero("Sai do caixa hoje", f(V))}
           ${numero("Seu dinheiro deixa de render", f(rendeMes) + " por mês")}
-          ${numero("Quando você tem o imóvel", "Na hora")}
           <p class="opcao-premissa">Rendimento de um CDB a ${ctx.fmtPct(p.cdb_pct_cdi)} do CDI (${ctx.fmtPct(p.cdi, 2)} ao ano), já descontado o IR de 15%.</p>
         </div>
         <div class="opcao">
           <h3>Financiamento</h3>
+          <p class="quando">Imóvel <strong>na hora</strong></p>
           ${numero("Entrada", f(fin.valorEntrada), ctx.fmtPct(p.fin_entrada) + " do imóvel")}
           ${numero("Primeira parcela", f(fin.primeiraParcela), `${p.fin_sistema}, ${p.fin_prazo} meses`)}
           ${numero("Juros pagos ao banco", f(fin.totalJuros), "ao longo do contrato")}
-          ${numero("Quando você tem o imóvel", "Na hora")}
+          ${numero("Total pago no fim", f(fin.totalPago), `entrada + ${p.fin_prazo} parcelas`)}
           <p class="opcao-premissa">Juros de ${ctx.fmtPct(p.fin_taxa_aa, 2)} ao ano + TR; ${cet}.</p>
         </div>
         <div class="opcao opcao-destaque">
           <h3>Consórcio</h3>
+          <p class="quando">Imóvel <strong>na contemplação</strong>, por sorteio ou lance</p>
           ${numero("Entrada", "Sem entrada")}
           ${numero(b.meia ? "Meia parcela" : "Parcela", f(parc, 2), `${b.prazo} meses`)}
           ${numero("Taxa de administração", ctx.fmtPct(b.taxaAdm / b.prazo, 3) + " ao mês", `${f(custoCons)} no total, sem juros`)}
-          ${numero("Quando você tem o imóvel", "Na contemplação", "sorteio e lances")}
+          <div class="seg seg-mini" role="group" aria-label="Custo final">
+            <button data-reaj="0" aria-pressed="${!comReaj}">Sem reajuste</button><button data-reaj="1" aria-pressed="${comReaj}">Com reajuste</button></div>
+          ${comReaj
+            ? numero("Total pago no fim", f(totalReaj), `com ${ctx.fmtPct(b.reajuste)} ao ano em todo o prazo; o crédito também sobe, para ${f(credFinal)}`)
+            : numero("Total pago no fim", f(V + custoCons), "crédito + taxas, sem reajuste")}
           <p class="opcao-premissa">Taxa de administração de ${ctx.fmtPct(b.taxaAdm)} e fundo de reserva de ${ctx.fmtPct(b.taxaTotal - b.taxaAdm)}; crédito e parcela reajustados ${ctx.fmtPct(b.reajuste)} ao ano.</p>
         </div>`;
+      el.querySelectorAll("[data-reaj]").forEach(x => x.addEventListener("click", () => { comReaj = x.dataset.reaj === "1"; el._redesenhar(); }));
       el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {});
-    })
+    }); }
   };
 
   // =========================================================

@@ -543,3 +543,39 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
   .proximo { margin-top: 8px; padding: 6px 12px; }
 }
 .campo input, .campo select { width: 100%; min-width: 0; }
+
+/* ---------- Mapas ilustrativos ---------- */
+.mapa-ilustra { width: 100%; height: auto; max-height: 64vh; object-fit: contain; display: block; }
+.quem { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr) minmax(0, 1fr); gap: clamp(16px, 2.6vw, 48px); }
+.stats-1 { grid-template-columns: 1fr; gap: clamp(12px, 2.4vh, 26px); }
+.stats-1 .stat strong { font-size: clamp(28px, 2.8vw, 54px); }
+.stats-1 .stat span { font-size: .8em; }
+.hs-mapa { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(20px, 4vw, 72px); align-items: center; }
+.hs-mapa .mapa-ilustra { max-height: 70vh; }
+/* ---------- Virada: quadros iguais e faixa embaixo ---------- */
+.virada { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; }
+.virada-antes, .virada-depois { align-content: center; }
+.virada-antes p, .virada-depois p { font-size: 1.05em; }
+.virada-faixa { margin-top: clamp(14px, 3vh, 32px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px;
+  border-top: 1px solid var(--linha); padding-top: clamp(10px, 2vh, 20px); }
+.virada-faixa .virada-exemplo { margin: 0; }
+.virada-seta { align-self: center; }
+/* ---------- Síntese ---------- */
+.sint-premissa { margin: 10px 0 0; font-size: .7em; color: var(--azul-300); }
+.pilar-sint .stat span { max-width: 34ch; }
+/* ---------- Fechamento ---------- */
+.plano-frase { margin: 4px 0 0; color: #FF8A7A; font-weight: 600; font-size: .85em; }
+/* ---------- Encerramento: logo no topo, dados mais espaçados ---------- */
+.fim-texto { height: 100%; grid-template-rows: auto 1fr; align-content: stretch; gap: 0; }
+.fim-logo { align-self: start; }
+.fim-corpo { display: grid; gap: clamp(14px, 3vh, 34px); align-content: center; }
+.fim-corpo .stats { gap: clamp(16px, 3.2vh, 36px) clamp(20px, 3vw, 56px); }
+/* ---------- Comparativo: botão de reajuste ---------- */
+.seg-mini { justify-self: start; }
+.seg-mini button { font-size: .72em; padding: .3em .8em; }
+@media (max-width: 860px) {
+  .quem, .hs-mapa { grid-template-columns: 1fr; }
+  .mapa-ilustra { max-height: 40vh; }
+}
+.quando { margin: -4px 0 4px; font-size: .78em; color: var(--azul-300); }
+.quando strong { color: var(--texto); }

@@ -192,7 +192,7 @@
         { id: "otimizar", nome: "Estratégias", html: telaOtimizar },
         { id: "compromisso", nome: "Compromissos", html: telaCompromisso }
       ] },
-      { nome: "Segurança, rendimento e liquidez", telas: [E.sintese].filter(Boolean).map(comCtx) },
+      { nome: "Segurança, liquidez e rendimento", telas: [E.sintese].filter(Boolean).map(comCtx) },
       { nome: "Casos reais", telas: casosOk && E.casos ? [comCtx(E.casos)] : [], semCasos: !casosOk },
       { nome: "Fechamento", telas: [E.fechamento].filter(Boolean).map(comCtx) },
       { nome: "Encerramento", telas: [E.encerramento].filter(Boolean).map(comCtx) }

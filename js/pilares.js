@@ -138,7 +138,7 @@
       <div class="economia" data-alvo="economia"></div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => {
-      let comReaj = true;
+      let comReaj = false; // padrão: sem reajuste; o apresentador liga se quiser
       reagir(el, ctx, () => {
         const b = base(ctx), f = ctx.fmtReal, p = b.p, V = b.credito, e = ctx.estado;
         const sistema = e.sistema || "Price";
@@ -168,7 +168,7 @@
           <div class="opcao opcao-destaque">
             <div class="opcao-topo"><h3>Consórcio</h3>
               <div class="seg seg-mini" role="group" aria-label="Reajuste">
-                <button data-reaj="1" aria-pressed="${comReaj}">Com reajuste</button><button data-reaj="0" aria-pressed="${!comReaj}">Sem reajuste</button></div></div>
+                <button data-reaj="0" aria-pressed="${!comReaj}">Sem reajuste</button><button data-reaj="1" aria-pressed="${comReaj}">Com reajuste</button></div></div>
             <p class="quando">Imóvel <strong>na contemplação</strong>, no mês <input class="mes-inline" data-mes-comp type="number" min="1" max="${b.prazo - 1}" value="${e.mes}" aria-label="Mês da contemplação"></p>
             ${linha("Entrada", "Sem entrada")}
             ${linha(b.meia ? "Meia parcela inicial" : "Parcela inicial", f(r.parc0, 2), `${b.prazo} meses`)}

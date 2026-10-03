@@ -81,26 +81,32 @@
 
   function telaFunil() {
     const passos = [...new Set(D.funil.map(f => f.meses))].sort((a, b) => a - b);
-    const pessoas = Array.from({ length: 100 }, (_, i) =>
-      `<span class="pessoa${i === VOCE ? " voce" : ""}" data-p="${i}"><svg viewBox="0 0 24 32"><use href="#ico-pessoa"/></svg>${i === VOCE ? "<em>você</em>" : ""}</span>`).join("");
     const etapas = D.funil.map((f, i) => `
-      <div class="etapa" data-i="${i}">
+      <button class="etapa" data-i="${i}">
         <strong>${esc(f.modalidade)}</strong>
         <span class="etapa-pct">${fmtPct(f.concorrencia)}</span>
         <small>${f.meses ? `libera com ${f.meses} em dia` : "parcela em dia"}</small>
-      </div>`).join("");
+      </button>`).join("");
     return `
-      <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-        <symbol id="ico-pessoa" viewBox="0 0 24 32"><circle cx="12" cy="7" r="6"/><path d="M1 31c0-8 5-14 11-14s11 6 11 14z"/></symbol></defs></svg>
       <h2 class="titulo">${T("funil_titulo")}</h2>
       <div class="funil2">
         <div class="placar" aria-live="polite">
           <div class="placar-num">85%</div>
           <p class="placar-frase">De cada 100 cotas, <strong class="placar-qtd">85</strong> disputam a contemplação com você.</p>
-          <p>Melhor modalidade disponível: <span class="placar-modalidade"></span></p>
+          <p>Modalidade: <span class="placar-modalidade"></span></p>
           <p class="placar-meses"></p>
         </div>
-        <div class="multidao" aria-hidden="true">${pessoas}</div>
+        <svg class="funil3d" viewBox="0 0 760 470" role="img" aria-label="Funil de concorrência por modalidade">
+          <defs>
+            <symbol id="ico-pessoa" viewBox="0 0 24 32"><circle cx="12" cy="7" r="6"/><path d="M1 31c0-8 5-14 11-14s11 6 11 14z"/></symbol>
+            <linearGradient id="g-funil" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#274477" stop-opacity=".55"/><stop offset="1" stop-color="#F84434" stop-opacity=".35"/></linearGradient>
+            <filter id="f-brilho" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <path class="funil-corpo"/>
+          <g class="aneis"></g>
+          <g class="multid"></g>
+          <g class="cliente"><use href="#ico-pessoa" x="-15" y="-46" width="30" height="40"/><text y="12" text-anchor="middle">você</text></g>
+        </svg>
         <div class="trilha">${etapas}</div>
         <div class="controle">
           <span class="controle-rotulo">Parcelas seguidas em dia</span>
@@ -112,7 +118,6 @@
       </div>
       <p class="aviso">${T("aviso_funil")}</p>`;
   }
-  const VOCE = 47; // posição da pessoa "você" na multidão
 
   const ICONES = {
     grupo: '<svg viewBox="0 0 56 56"><circle cx="20" cy="20" r="7"/><circle cx="38" cy="22" r="5.5"/><path d="M7 44c1.5-8 7-12 13-12s11.5 4 13 12"/><path d="M33 33c5 0 10 3 11.5 10"/></svg>',
@@ -206,16 +211,55 @@
   let ROTEIRO = [], SECOES = [], LISTA = [];
   let atual = 0;
 
-  // ---------- Funil ----------
-  // O apresentador escolhe as parcelas em dia; as pessoas que deixam de concorrer somem da multidão.
+  // ---------- Funil 3D ----------
+  // Um anel de pessoas por modalidade, em perspectiva e girando. O cliente desce até o nível escolhido:
+  // os níveis de cima ficam para trás e só o anel atual "disputa" com ele.
   function iniciarFunil(el) {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = $(".funil3d", el), gAneis = $(".aneis", svg), gMult = $(".multid", svg), cliente = $(".cliente", svg);
     const placar = $(".placar", el), num = $(".placar-num", el), qtd = $(".placar-qtd", el);
     const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // Ordem fixa e "embaralhada" de saída das pessoas (a pessoa "você" nunca sai)
-    const ordem = Array.from({ length: 100 }, (_, i) => i).filter(i => i !== VOCE)
-      .map(i => ({ i, k: Math.sin(i * 12.9898) * 43758.5453 % 1 })).sort((a, b) => a.k - b.k).map(x => x.i);
-    const pessoas = $$(".pessoa", el);
-    let mostrado = 85, anim = null;
+    const F = D.funil, N = F.length, CX = 380, TOPO = 70, PASSO = (430 - TOPO) / Math.max(1, N - 1);
+    // Geometria dos anéis: o raio diminui a cada nível (formato de funil)
+    const aneis = F.map((f, i) => {
+      const rx = 330 - (330 - 46) * Math.pow(i / Math.max(1, N - 1), 0.85), ry = rx * 0.2, cy = TOPO + i * PASSO;
+      const qtdP = Math.max(3, Math.round(f.concorrencia * 40));
+      return { f, i, rx, ry, cy, qtdP, fase: i * 0.7, dir: i % 2 ? -1 : 1 };
+    });
+    // Corpo do funil (silhueta ligando as bordas dos anéis)
+    const esq = aneis.map(a => `${CX - a.rx},${a.cy}`), dir = aneis.slice().reverse().map(a => `${CX + a.rx},${a.cy}`);
+    $(".funil-corpo", svg).setAttribute("d", `M${esq.join(" L")} L${dir.join(" L")} Z`);
+    aneis.forEach(a => {
+      const e = document.createElementNS(NS, "ellipse");
+      e.setAttribute("cx", CX); e.setAttribute("cy", a.cy); e.setAttribute("rx", a.rx); e.setAttribute("ry", a.ry);
+      e.setAttribute("class", "anel"); e.dataset.i = a.i;
+      gAneis.appendChild(e);
+      a.anel = e;
+      a.pessoas = Array.from({ length: a.qtdP }, (_, k) => {
+        const u = document.createElementNS(NS, "use");
+        u.setAttribute("href", "#ico-pessoa"); u.setAttribute("width", 22); u.setAttribute("height", 29);
+        u.setAttribute("class", "p3d"); u.dataset.i = a.i;
+        gMult.appendChild(u);
+        return { u, th: (k / a.qtdP) * Math.PI * 2 };
+      });
+    });
+    // Clique no anel ou nas pessoas também escolhe o nível
+    svg.addEventListener("click", ev => { const t = ev.target.closest("[data-i]"); if (t) escolher(+t.dataset.i); });
+
+    let rot = 0, ultimo = performance.now(), quadro = null, sel = 0, mostrado = 85, anim = null;
+    function desenhar(t) {
+      const dt = Math.min(0.05, (t - ultimo) / 1000); ultimo = t;
+      if (!reduzir) rot += dt * 0.35;
+      aneis.forEach(a => a.pessoas.forEach(p => {
+        const th = p.th + rot * a.dir + a.fase, s = Math.sin(th);
+        const x = CX + a.rx * Math.cos(th), y = a.cy + a.ry * s;
+        const prof = (s + 1) / 2; // 0 = fundo, 1 = frente
+        const esc = 0.62 + prof * 0.5;
+        p.u.setAttribute("transform", `translate(${(x - 11 * esc).toFixed(1)},${(y - 27 * esc).toFixed(1)}) scale(${esc.toFixed(3)})`);
+        p.u.style.setProperty("--prof", prof.toFixed(2));
+      }));
+      quadro = el.isConnected ? requestAnimationFrame(desenhar) : null;
+    }
     function contar(alvo) {
       cancelAnimationFrame(anim);
       if (reduzir) { mostrado = alvo; num.textContent = alvo + "%"; qtd.textContent = alvo; return; }
@@ -228,41 +272,46 @@
       };
       anim = requestAnimationFrame(passo);
     }
-    function aplicar(m) {
-      const liberados = D.funil.filter(f => f.meses <= m);
-      const melhor = liberados.reduce((a, b) => (b.concorrencia < a.concorrencia ? b : a), liberados[0]);
-      const ativos = Math.round(melhor.concorrencia * 100);
-      // Mantém "você" + (ativos − 1) pessoas da ordem; o resto sai, em ondas
-      const ficam = new Set(ordem.slice(0, Math.max(0, ativos - 1)));
-      pessoas.forEach(p => {
-        const i = +p.dataset.p;
-        if (i === VOCE) return;
-        const sai = !ficam.has(i);
-        const rank = ordem.indexOf(i);
-        p.style.transitionDelay = reduzir ? "0s" : ((sai ? (99 - rank) : rank) % 40) * 12 + "ms";
-        p.classList.toggle("saiu", sai);
+    // meses = parcelas em dia; i = nível mostrado (por padrão, a melhor modalidade liberada)
+    function aplicar(meses, i) {
+      const liberados = F.map((f, k) => k).filter(k => F[k].meses <= meses);
+      if (i == null) i = liberados.reduce((a, b) => (F[b].concorrencia < F[a].concorrencia ? b : a), liberados[0]);
+      sel = i;
+      aneis.forEach(a => {
+        const estado = a.i === i ? "atual" : a.i < i ? "atras" : (F[a.i].meses <= meses ? "livre" : "trava");
+        a.anel.setAttribute("class", "anel " + estado);
+        a.pessoas.forEach(p => p.u.setAttribute("class", "p3d " + estado));
       });
+      const a = aneis[i];
+      cliente.style.transform = `translate(${CX}px, ${a.cy + a.ry + 6}px)`;
       $$(".etapa", el).forEach(d => {
-        const f = D.funil[+d.dataset.i];
-        d.classList.toggle("liberado", f.meses <= m);
-        d.classList.toggle("melhor", f === melhor);
+        const k = +d.dataset.i;
+        d.classList.toggle("liberado", F[k].meses <= meses);
+        d.classList.toggle("melhor", k === i);
       });
-      $$(".passo", el).forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.m === m)));
-      $(".placar-modalidade", el).textContent = melhor.modalidade;
-      $(".placar-meses", el).textContent = m === 0 ? "Com a parcela do mês em dia." : `Com ${m} parcelas seguidas em dia.`;
-      placar.classList.toggle("no-topo", m === Math.max(...D.funil.map(f => f.meses)));
-      contar(ativos);
+      $$(".passo", el).forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.m === meses)));
+      $(".placar-modalidade", el).textContent = F[i].modalidade;
+      $(".placar-meses", el).textContent = meses === 0 ? "Com a parcela do mês em dia." : `Com ${meses} parcelas seguidas em dia.`;
+      placar.classList.toggle("no-topo", i === N - 1);
+      contar(Math.round(F[i].concorrencia * 100));
+      mesesAtual = meses;
     }
+    let mesesAtual = 0;
+    // Escolher um nível direto (quadro ou anel): libera as parcelas em dia que ele exige
+    function escolher(i) { aplicar(Math.max(mesesAtual, F[i].meses), i); }
+    $$(".etapa", el).forEach(d => d.addEventListener("click", () => escolher(+d.dataset.i)));
     $$(".passo", el).forEach(b => b.addEventListener("click", () => aplicar(+b.dataset.m)));
     $('[data-acao="atraso"]', el).addEventListener("click", () => {
       placar.classList.remove("zerado"); void placar.offsetWidth; placar.classList.add("zerado");
-      el.querySelector(".multidao").classList.remove("volta"); void el.offsetWidth; el.querySelector(".multidao").classList.add("volta");
-      aplicar(0);
+      svg.classList.remove("tremer"); void svg.offsetWidth; svg.classList.add("tremer");
+      aplicar(0, 0);
       $(".placar-meses", el).textContent = "Um dia de atraso zerou a contagem.";
     });
     aplicar(0);
-    // Ao entrar na tela, começa do zero: o apresentador avança conforme a conversa
-    el._reiniciar = () => aplicar(0);
+    // Só anima enquanto a tela está visível
+    el._reiniciar = () => { aplicar(0); if (!quadro) { ultimo = performance.now(); quadro = requestAnimationFrame(desenhar); } };
+    el._sair = () => { cancelAnimationFrame(quadro); quadro = null; };
+    desenhar(performance.now()); cancelAnimationFrame(quadro); quadro = null;
   }
 
   // ---------- Montagem ----------
@@ -316,7 +365,7 @@
   // ---------- Animações de entrada ----------
   const REVELA = ".titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .mapa-ilustra, .opcao, .caminho, .pilar-sint, " +
     ".plano-card, .proximo, .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, " +
-    ".placar, .degrau, .multidao, .etapa, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
+    ".placar, .degrau, .funil3d, .etapa, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
   const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
   function animarEntrada(el) {
     if (semMovimento || !el) return;

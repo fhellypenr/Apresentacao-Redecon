@@ -588,7 +588,7 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
   .slide.ativo { animation: telaEntra .55s cubic-bezier(.2,.8,.2,1) both; }
   @keyframes telaEntra { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 48px)); } to { opacity: 1; transform: none; } }
   .slide.revelar :is(.titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .opcao, .caminho, .pilar-sint, .plano-card, .proximo,
-    .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, .placar, .degrau, .multidao, .trilha, .controle,
+    .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, .placar, .degrau, .multidao, .funil3d, .trilha, .controle,
     .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-logo, .fim-corpo > *, .caso, [data-alvo="rodape"]) {
     animation: subir .6s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--k, 0) * 65ms + 80ms);
   }
@@ -684,3 +684,23 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 .seg-card { text-transform: none; letter-spacing: 0; font-weight: 600; }
 .seg-card button { font-size: 1.1em; padding: .2em .7em; }
 .seg-card { padding: 1px; } .seg-card button { font-size: 1em; padding: 0 .6em; line-height: 1.5; }
+
+/* ---------- Funil 3D ---------- */
+.funil3d { width: 100%; height: auto; max-height: 47vh; display: block; overflow: visible; }
+.funil-corpo { fill: url(#g-funil); opacity: .35; }
+.anel { fill: rgba(142,160,196,.06); stroke: rgba(142,160,196,.35); stroke-width: 1.5; cursor: pointer; transition: stroke .4s, fill .4s, opacity .4s; }
+.anel.atual { stroke: #F84434; stroke-width: 3; fill: rgba(248,68,52,.12); filter: url(#f-brilho); }
+.anel.atras { opacity: .35; }
+.anel.trava { stroke-dasharray: 6 6; opacity: .6; }
+.p3d { fill: #8EA0C4; cursor: pointer; opacity: calc(.35 + var(--prof, .5) * .65); transition: fill .4s, opacity .4s; }
+.p3d.atual { fill: #DCE3F0; }
+.p3d.atras { opacity: calc(.04 + var(--prof, .5) * .08); }
+.p3d.livre { opacity: calc(.2 + var(--prof, .5) * .3); }
+.p3d.trava { opacity: calc(.08 + var(--prof, .5) * .14); }
+.cliente { transition: transform .8s cubic-bezier(.3,1.3,.5,1); }
+.cliente use { fill: #F84434; filter: url(#f-brilho); }
+.cliente text { fill: #FF8A7A; font: 700 15px var(--fonte-titulo); }
+.funil3d.tremer { animation: tremer .45s; }
+@keyframes tremer { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+button.etapa { font: inherit; text-align: left; cursor: pointer; background: transparent; }
+button.etapa:hover { border-color: rgba(248,68,52,.6); transform: translateY(-2px); }

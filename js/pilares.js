@@ -267,7 +267,7 @@
     html: ctx => `
       <h2 class="titulo">${ctx.T("in_selic_titulo")}</h2>
       ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade"])}
-      <div class="dois">
+      <div class="dois centro-vertical">
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Depois da contemplação: crédito aplicado e saldo devedor</p><div data-alvo="graf"></div>
           <div class="destaque-fim" data-alvo="fim"></div></div>
@@ -500,6 +500,9 @@
       rodar();
     }
   };
+
+  // Ajudas reaproveitadas pelas telas da Etapa 4 (fechamento etc.)
+  window.PILARES_AJUDA = { base, cota, cdbLiquidoAm, controles, ligarControles, sincronizar, reagir, numero, rodape, pctTxt, moedaCurta, lerMoeda };
 
   window.PILARES = {
     aquisicao: { nome: "Aquisição", telas: [usosAquisicao, comparativo] },

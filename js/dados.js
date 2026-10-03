@@ -75,7 +75,18 @@
     }));
     d.ir = abas.IR.slice(1).filter(l => l[0]).map(l => ({ ate: lerValor(l[0]), aliquota: lerValor(l[1]) }));
     d.institucional = {};
-    abas.Institucional.slice(1).forEach(l => { if (l[0]) d.institucional[l[0].trim()] = (l[3] || "").trim(); });
+    d.inst_rot = {};
+    abas.Institucional.slice(1).forEach(l => {
+      if (!l[0]) return;
+      const v = (l[3] || "").trim();
+      if (v && !v.startsWith("#")) d.institucional[l[0].trim()] = v;
+      if ((l[2] || "").trim()) d.inst_rot[l[0].trim()] = l[2].trim();
+    });
+    // Casos reais: só entram os autorizados (coluna F = "sim")
+    d.casos = (abas.Casos || []).slice(1).filter(l => l[0] && /^s/i.test((l[5] || "").trim())).map(l => ({
+      titulo: l[0].trim(), perfil: (l[1] || "").trim(), credito: (l[2] || "").trim(),
+      fez: (l[3] || "").trim(), resultado: (l[4] || "").trim()
+    }));
     d.cidades = (abas.Cidades || []).slice(1).filter(l => l[0]).map(l => ({
       cidade: l[0].trim(), diaria_usd: lerValor(l[1]), ocupacao: lerValor(l[2]), fonte: (l[3] || "").trim()
     })).filter(c => c.cidade);
@@ -90,11 +101,12 @@
   // Junta o que veio da planilha com a reserva: o que estiver vazio na planilha usa a reserva.
   function completar(d, base) {
     const out = JSON.parse(JSON.stringify(base));
-    for (const grupo of ["parametros", "institucional", "textos"]) {
+    for (const grupo of ["parametros", "institucional", "inst_rot", "textos"]) {
       for (const [k, v] of Object.entries(d[grupo] || {})) if (v !== null && v !== "") out[grupo][k] = v;
     }
     for (const k of Object.keys(d.indices || {})) if (d.indices[k].valor !== null) out.indices[k] = d.indices[k];
     for (const lista of ["prazos", "funil", "ir", "cidades", "alternativas"]) if (d[lista] && d[lista].length) out[lista] = d[lista];
+    if (d.casos) out.casos = d.casos; // lista de casos pode ficar vazia de propósito
     return out;
   }
 
@@ -124,6 +136,7 @@
         await Promise.all(CONFIG.abas.map(async a => { abas[a] = await baixarAba(a); }));
         await baixarAba("Cidades").then(x => { abas.Cidades = x; }).catch(() => {});
         await baixarAba("Alternativas").then(x => { abas.Alternativas = x; }).catch(() => {});
+        await baixarAba("Casos").then(x => { abas.Casos = x; }).catch(() => {});
         const d = completar(montar(abas), DADOS_PADRAO);
         this.atual = derivar(d);
         this.origem = "planilha";

@@ -33,6 +33,17 @@
   })();
   function salvarAjustes() { try { localStorage.setItem(AJ_CHAVE, JSON.stringify(ajustes)); } catch (e) {} }
 
+  // Telas ligadas/desligadas (fica salvo neste aparelho). Padrão: previdência desligada.
+  const TELAS_CHAVE = "redecon_telas_v1";
+  const TELAS_PADRAO = { "po-previdencia": false };
+  const telasOn = (() => {
+    let t = Object.assign({}, TELAS_PADRAO);
+    try { Object.assign(t, JSON.parse(localStorage.getItem(TELAS_CHAVE)) || {}); } catch (e) {}
+    return t;
+  })();
+  const telaLigada = id => telasOn[id] !== false;
+  function salvarTelas() { try { localStorage.setItem(TELAS_CHAVE, JSON.stringify(telasOn)); } catch (e) {} }
+
   // ---------- Telas ----------
   function telaCapa() {
     const cliente = ajustes.cliente ? `<div><span>Preparado para</span><strong>${esc(ajustes.cliente)}</strong></div>` : "";
@@ -151,6 +162,9 @@
   const ctx = {
     get D() { return D; }, T, esc, fmtPct, fmtReal,
     get estado() { return estado; },
+    get ajustes() { return ajustes; },
+    // Vai para a primeira tela da lista que estiver ligada
+    irPara(ids) { for (const id of [].concat(ids)) { const k = LISTA.findIndex(t => t.id === id); if (k >= 0) { ir(k); return; } } },
     mudou() { document.dispatchEvent(new CustomEvent("redecon:estado")); }
   };
 
@@ -164,11 +178,13 @@
       html: () => t.html(ctx),
       iniciar: t.iniciar ? el => t.iniciar(el, ctx) : null
     });
+    const E = window.ETAPA4 || {};
+    const casosOk = D.casos && D.casos.length;
     return [
-      { nome: "Abertura", telas: [{ id: "capa", classe: "capa", html: telaCapa }] },
-      { nome: "Quem somos", telas: [] },
-      { nome: "Virada de chave", telas: [] },
-      { nome: "Método API", telas: [] },
+      { nome: "Abertura", telas: [{ id: "capa", nome: "Capa", classe: "capa", html: telaCapa }] },
+      { nome: "Quem somos", telas: [E.quemRedecon, E.quemHs].filter(Boolean).map(comCtx) },
+      { nome: "Virada de chave", telas: [E.virada].filter(Boolean).map(comCtx) },
+      { nome: "Método API", telas: [E.mapa].filter(Boolean).map(comCtx) },
       ...ordem.map(k => ({ nome: (P[k] && P[k].nome) || k, telas: P[k] ? P[k].telas.map(comCtx) : [] })),
       { nome: "Como chegar lá", telas: [
         { id: "regras", nome: "Regras do jogo", html: telaRegras },
@@ -176,13 +192,13 @@
         { id: "otimizar", nome: "Estratégias", html: telaOtimizar },
         { id: "compromisso", nome: "Compromissos", html: telaCompromisso }
       ] },
-      { nome: "Segurança, rendimento e liquidez", telas: [] },
-      { nome: "Casos reais", telas: [] },
-      { nome: "Fechamento", telas: [] },
-      { nome: "Encerramento", telas: [] }
+      { nome: "Segurança, rendimento e liquidez", telas: [E.sintese].filter(Boolean).map(comCtx) },
+      { nome: "Casos reais", telas: casosOk && E.casos ? [comCtx(E.casos)] : [], semCasos: !casosOk },
+      { nome: "Fechamento", telas: [E.fechamento].filter(Boolean).map(comCtx) },
+      { nome: "Encerramento", telas: [E.encerramento].filter(Boolean).map(comCtx) }
     ];
   }
-  let SECOES = [], LISTA = [];
+  let ROTEIRO = [], SECOES = [], LISTA = [];
   let atual = 0;
 
   // ---------- Funil ----------
@@ -251,7 +267,8 @@
   // ---------- Montagem ----------
   function montar() {
     const idAtual = LISTA[atual] ? LISTA[atual].id : null;
-    SECOES = construirRoteiro();
+    ROTEIRO = construirRoteiro();
+    SECOES = ROTEIRO.map(sec => Object.assign({}, sec, { telas: sec.telas.filter(t => telaLigada(t.id)) })).filter(sec => sec.telas.length);
     LISTA = SECOES.flatMap((s, si) => s.telas.map(t => Object.assign({ secao: si }, t)));
     if (idAtual) { const k = LISTA.findIndex(t => t.id === idAtual); if (k >= 0) atual = k; }
     if (!estado) estado = criarEstado();
@@ -261,6 +278,7 @@
     LISTA.forEach((t, i) => { if (t.iniciar) t.iniciar($(`.slide[data-i="${i}"]`)); });
     montarProgresso();
     montarMenu();
+    montarTelas();
     ir(Math.min(atual, LISTA.length - 1), true);
   }
 
@@ -274,13 +292,24 @@
 
   function montarMenu() {
     $("#lista-menu").innerHTML = SECOES.map((s, si) => {
-      if (!s.telas.length) return `<div class="menu-secao"><h3>${esc(s.nome)}</h3><button disabled>Em construção</button></div>`;
       return `<div class="menu-secao"><h3>${esc(s.nome)}</h3>${s.telas.map(t => {
         const i = LISTA.findIndex(x => x.id === t.id);
         return `<button data-ir="${i}">${esc(t.nome || s.nome)}</button>`;
       }).join("")}</div>`;
     }).join("");
     $$("#lista-menu [data-ir]").forEach(b => b.addEventListener("click", () => { ir(+b.dataset.ir); fecharPaineis(); }));
+  }
+
+  // Lista de telas no painel de ajustes, para ligar ou desligar cada uma
+  function montarTelas() {
+    const caixa = $("#aj-telas");
+    if (!caixa) return;
+    caixa.innerHTML = ROTEIRO.map(sec => {
+      const itens = sec.telas.map(t => `<label class="tela-op"><input type="checkbox" data-tela="${esc(t.id)}" ${telaLigada(t.id) ? "checked" : ""} ${t.id === "capa" ? "disabled" : ""}> ${esc(t.nome || sec.nome)}</label>`).join("");
+      const vazio = sec.semCasos ? `<p class="tela-nota">Nenhum caso autorizado na planilha (aba Casos).</p>` : "";
+      return `<div class="tela-grupo"><span>${esc(sec.nome)}</span>${itens}${vazio}</div>`;
+    }).join("");
+    $$("[data-tela]", caixa).forEach(c => c.addEventListener("change", () => { telasOn[c.dataset.tela] = c.checked; salvarTelas(); montar(); }));
   }
 
   function ir(i, inicial) {

@@ -73,6 +73,12 @@ const f = M.financiamentoSAC({ valorImovel: 5e5, entrada: 0.2, taxaAa: 0.115, pr
 const im = Math.pow(1.115, 1 / 12) - 1;
 igual("SAC 1ª parcela", f.primeiraParcela, 4e5 / 360 + 4e5 * im);
 
+// 9b. Price: 400 mil, 360m, 11,5% a.a. → parcela pela fórmula PMT; total de juros = PMT × n − financiado
+const pr = M.financiamentoPrice({ valorImovel: 5e5, entrada: 0.2, taxaAa: 0.115, prazo: 360 });
+const pmt = 4e5 * im / (1 - Math.pow(1 + im, -360));
+igual("Price parcela", pr.primeiraParcela, pmt);
+igual("Price juros", pr.totalJuros, pmt * 360 - 4e5);
+
 // 10. IR: aporte único 100 mil, 24 meses, 13,65% a.a., IR 15%
 const ir = [{ ate: 180, aliquota: 0.225 }, { ate: 360, aliquota: 0.2 }, { ate: 720, aliquota: 0.175 }, { ate: 99999, aliquota: 0.15 }];
 const a = M.aplicarAportes({ aportes: [{ mes: 0, valor: 1e5 }], mesFinal: 25, taxaAa: 0.1365, tabelaIR: ir });

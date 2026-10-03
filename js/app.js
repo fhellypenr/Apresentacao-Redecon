@@ -81,24 +81,27 @@
 
   function telaFunil() {
     const passos = [...new Set(D.funil.map(f => f.meses))].sort((a, b) => a - b);
-    const degraus = D.funil.map((f, i) => `
-      <div class="degrau" data-i="${i}">
-        <div class="degrau-nome">${esc(f.modalidade)}<small>${esc(f.condicao)}${f.obs ? " (" + esc(f.obs.toLowerCase()) + ")" : ""}</small></div>
-        <div class="degrau-trilho">
-          <div class="degrau-barra"><span>${fmtPct(f.concorrencia)}</span></div>
-          <span class="degrau-trava">libera com ${f.meses} em dia</span>
-          <span class="degrau-fantasma">${fmtPct(f.concorrencia)}</span>
-        </div>
+    const pessoas = Array.from({ length: 100 }, (_, i) =>
+      `<span class="pessoa${i === VOCE ? " voce" : ""}" data-p="${i}"><svg viewBox="0 0 24 32"><use href="#ico-pessoa"/></svg>${i === VOCE ? "<em>você</em>" : ""}</span>`).join("");
+    const etapas = D.funil.map((f, i) => `
+      <div class="etapa" data-i="${i}">
+        <strong>${esc(f.modalidade)}</strong>
+        <span class="etapa-pct">${fmtPct(f.concorrencia)}</span>
+        <small>${f.meses ? `libera com ${f.meses} em dia` : "parcela em dia"}</small>
       </div>`).join("");
     return `
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+        <symbol id="ico-pessoa" viewBox="0 0 24 32"><circle cx="12" cy="7" r="6"/><path d="M1 31c0-8 5-14 11-14s11 6 11 14z"/></symbol></defs></svg>
       <h2 class="titulo">${T("funil_titulo")}</h2>
-      <div class="funil">
+      <div class="funil2">
         <div class="placar" aria-live="polite">
-          <div class="placar-num">90%</div>
-          <p>de concorrência média na melhor modalidade disponível: <span class="placar-modalidade"></span></p>
+          <div class="placar-num">85%</div>
+          <p class="placar-frase">De cada 100 cotas, <strong class="placar-qtd">85</strong> disputam a contemplação com você.</p>
+          <p>Melhor modalidade disponível: <span class="placar-modalidade"></span></p>
           <p class="placar-meses"></p>
         </div>
-        <div class="escada">${degraus}</div>
+        <div class="multidao" aria-hidden="true">${pessoas}</div>
+        <div class="trilha">${etapas}</div>
         <div class="controle">
           <span class="controle-rotulo">Parcelas seguidas em dia</span>
           <div class="passos" role="group" aria-label="Parcelas seguidas em dia">
@@ -109,6 +112,7 @@
       </div>
       <p class="aviso">${T("aviso_funil")}</p>`;
   }
+  const VOCE = 47; // posição da pessoa "você" na multidão
 
   const ICONES = {
     grupo: '<svg viewBox="0 0 56 56"><circle cx="20" cy="20" r="7"/><circle cx="38" cy="22" r="5.5"/><path d="M7 44c1.5-8 7-12 13-12s11.5 4 13 12"/><path d="M33 33c5 0 10 3 11.5 10"/></svg>',
@@ -202,66 +206,62 @@
   let atual = 0;
 
   // ---------- Funil ----------
+  // O apresentador escolhe as parcelas em dia; as pessoas que deixam de concorrer somem da multidão.
   function iniciarFunil(el) {
-    const placar = $(".placar", el), num = $(".placar-num", el);
-    let mostrado = 90, meses = 0, anim = null;
+    const placar = $(".placar", el), num = $(".placar-num", el), qtd = $(".placar-qtd", el);
     const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Ordem fixa e "embaralhada" de saída das pessoas (a pessoa "você" nunca sai)
+    const ordem = Array.from({ length: 100 }, (_, i) => i).filter(i => i !== VOCE)
+      .map(i => ({ i, k: Math.sin(i * 12.9898) * 43758.5453 % 1 })).sort((a, b) => a.k - b.k).map(x => x.i);
+    const pessoas = $$(".pessoa", el);
+    let mostrado = 85, anim = null;
     function contar(alvo) {
       cancelAnimationFrame(anim);
-      if (reduzir) { mostrado = alvo; num.textContent = alvo + "%"; return; }
+      if (reduzir) { mostrado = alvo; num.textContent = alvo + "%"; qtd.textContent = alvo; return; }
       const de = mostrado, t0 = performance.now();
       const passo = t => {
-        const k = Math.min(1, (t - t0) / 650), e = 1 - Math.pow(1 - k, 3);
+        const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3);
         mostrado = Math.round(de + (alvo - de) * e);
-        num.textContent = mostrado + "%";
+        num.textContent = mostrado + "%"; qtd.textContent = mostrado;
         if (k < 1) anim = requestAnimationFrame(passo);
       };
       anim = requestAnimationFrame(passo);
     }
     function aplicar(m) {
-      meses = m;
       const liberados = D.funil.filter(f => f.meses <= m);
       const melhor = liberados.reduce((a, b) => (b.concorrencia < a.concorrencia ? b : a), liberados[0]);
-      $$(".degrau", el).forEach(d => {
-        const f = D.funil[+d.dataset.i], ok = f.meses <= m;
-        d.classList.toggle("liberado", ok);
+      const ativos = Math.round(melhor.concorrencia * 100);
+      // Mantém "você" + (ativos − 1) pessoas da ordem; o resto sai, em ondas
+      const ficam = new Set(ordem.slice(0, Math.max(0, ativos - 1)));
+      pessoas.forEach(p => {
+        const i = +p.dataset.p;
+        if (i === VOCE) return;
+        const sai = !ficam.has(i);
+        const rank = ordem.indexOf(i);
+        p.style.transitionDelay = reduzir ? "0s" : ((sai ? (99 - rank) : rank) % 40) * 12 + "ms";
+        p.classList.toggle("saiu", sai);
+      });
+      $$(".etapa", el).forEach(d => {
+        const f = D.funil[+d.dataset.i];
+        d.classList.toggle("liberado", f.meses <= m);
         d.classList.toggle("melhor", f === melhor);
-        $(".degrau-barra", d).style.width = ok ? (f.concorrencia * 100) + "%" : "0";
       });
       $$(".passo", el).forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.m === m)));
       $(".placar-modalidade", el).textContent = melhor.modalidade;
       $(".placar-meses", el).textContent = m === 0 ? "Com a parcela do mês em dia." : `Com ${m} parcelas seguidas em dia.`;
       placar.classList.toggle("no-topo", m === Math.max(...D.funil.map(f => f.meses)));
-      contar(Math.round(melhor.concorrencia * 100));
+      contar(ativos);
     }
-    // Ao entrar na tela, o funil sobe sozinho de 0 até o último degrau (Fidelidade 4).
-    const passos = [...new Set(D.funil.map(f => f.meses))].sort((a, b) => a - b);
-    const topo = passos[passos.length - 1];
-    let timer = null;
-    function parar() { clearTimeout(timer); timer = null; }
-    function subir() {
-      parar();
-      if (reduzir) { aplicar(topo); return; }
-      let k = 0;
-      aplicar(passos[0]);
-      const proximo = () => {
-        k++;
-        if (k >= passos.length) return;
-        aplicar(passos[k]);
-        timer = setTimeout(proximo, 1100);
-      };
-      timer = setTimeout(proximo, 1300);
-    }
-    $$(".passo", el).forEach(b => b.addEventListener("click", () => { parar(); aplicar(+b.dataset.m); }));
+    $$(".passo", el).forEach(b => b.addEventListener("click", () => aplicar(+b.dataset.m)));
     $('[data-acao="atraso"]', el).addEventListener("click", () => {
-      parar();
       placar.classList.remove("zerado"); void placar.offsetWidth; placar.classList.add("zerado");
+      el.querySelector(".multidao").classList.remove("volta"); void el.offsetWidth; el.querySelector(".multidao").classList.add("volta");
       aplicar(0);
       $(".placar-meses", el).textContent = "Um dia de atraso zerou a contagem.";
     });
-    aplicar(topo);
-    el._reiniciar = subir;
-    el._sair = parar;
+    aplicar(0);
+    // Ao entrar na tela, começa do zero: o apresentador avança conforme a conversa
+    el._reiniciar = () => aplicar(0);
   }
 
   // ---------- Montagem ----------
@@ -315,7 +315,7 @@
   // ---------- Animações de entrada ----------
   const REVELA = ".titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .mapa-ilustra, .opcao, .caminho, .pilar-sint, " +
     ".plano-card, .proximo, .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, " +
-    ".placar, .degrau, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
+    ".placar, .degrau, .multidao, .etapa, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
   const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
   function animarEntrada(el) {
     if (semMovimento || !el) return;

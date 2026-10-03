@@ -178,6 +178,7 @@
         const s0 = H.cota(b, { modalidade: "nenhuma" });
         const parc = s0.meses[0].parcela;
         const fin = Motor.financiamentoSAC({ valorImovel: V, entrada: p.fin_entrada, taxaAa: p.fin_taxa_aa, trAa: p.tr_aa, prazo: p.fin_prazo });
+        const cmp = H.compararFinanciamento(b, { mes: e.mes, comReaj: true, sistema: "SAC" });
         const m5 = Math.min(61, b.prazo), l5 = s0.meses[m5 - 1];
         const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
         const c = sc.contemplacao, rende1 = c.creditoDisponivel * b.rendAm, pPos = sc.parcelaPosInicial;
@@ -192,8 +193,8 @@
             H.numero("Crédito", f(V), `${b.prazo} meses`, "grande") +
             H.numero(b.meia ? "Meia parcela" : "Parcela", f(parc, 2), `taxa de ${ctx.fmtPct(b.taxaAdm / b.prazo, 3)} ao mês, sem juros`), "plano-destaque") +
           card("Aquisição",
-            H.numero("Juros que você deixa de pagar", f(fin.totalJuros), `comparado a financiar o mesmo valor a ${ctx.fmtPct(p.fin_taxa_aa, 2)} ao ano + TR`) +
-            H.numero("Custo do consórcio", f(V * b.taxaTotal), `taxas no prazo todo, sem juros e sem entrada (no financiamento: ${f(fin.valorEntrada)} de entrada)`)) +
+            H.numero("Juros de um financiamento", f(fin.totalJuros), `para financiar o mesmo valor a ${ctx.fmtPct(p.fin_taxa_aa, 2)} ao ano + TR`) +
+            H.numero("Mesmo com os reajustes, você economiza", f(cmp.economia), `contemplado no mês ${e.mes}, comparado ao financiamento, e sem ${f(fin.valorEntrada)} de entrada`, cmp.economia > 0 ? "positivo" : "")) +
           card("Poupança",
             H.numero(`Crédito em ${Math.floor((m5 - 1) / 12)} anos`, f(l5.creditoAtual), `+${f(l5.creditoAtual - V)} de reajuste`) +
             `<p class="plano-frase">O crédito aumenta todo ano e o custo real da cota diminui.</p>`) +

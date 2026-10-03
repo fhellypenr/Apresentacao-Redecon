@@ -156,6 +156,16 @@
       totalJuros: juros, totalPago: financiado + juros + valorImovel * entrada };
   }
 
+  // ---------- Financiamento imobiliário (Price: parcelas iguais) ----------
+  function financiamentoPrice({ valorImovel, entrada, taxaAa, trAa = 0, prazo }) {
+    const financiado = valorImovel * (1 - entrada);
+    const i = (1 + mensal(taxaAa)) * (1 + mensal(trAa)) - 1;
+    const pmt = i === 0 ? financiado / prazo : financiado * i / (1 - Math.pow(1 + i, -prazo));
+    const totalJuros = pmt * prazo - financiado;
+    return { valorEntrada: valorImovel * entrada, financiado, taxaMes: i, primeiraParcela: pmt, ultimaParcela: pmt,
+      totalJuros, totalPago: financiado + totalJuros + valorImovel * entrada };
+  }
+
   // ---------- Previdência: transformar um valor em renda ----------
   function previdencia({ valor, taxaAmLiquida, anos }) {
     const n = anos * 12, r = taxaAmLiquida;
@@ -192,7 +202,7 @@
   }
 
   const Motor = { mensal, fatorReajuste, parcela, creditoPelaParcela, taxaAdmMes, simularCota, taxaEfetiva,
-    vendaCarta, aliquotaIR, aplicarAportes, financiamentoSAC, previdencia, rendaVitalicia,
+    vendaCarta, aliquotaIR, aplicarAportes, financiamentoSAC, financiamentoPrice, previdencia, rendaVitalicia,
     aluguelTradicional, shortStay, melhorModalidade, tir };
   if (typeof module !== "undefined" && module.exports) module.exports = Motor;
   else raiz.Motor = Motor;

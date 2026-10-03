@@ -588,7 +588,7 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
   .slide.ativo { animation: telaEntra .55s cubic-bezier(.2,.8,.2,1) both; }
   @keyframes telaEntra { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 48px)); } to { opacity: 1; transform: none; } }
   .slide.revelar :is(.titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .opcao, .caminho, .pilar-sint, .plano-card, .proximo,
-    .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, .placar, .degrau, .controle,
+    .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, .placar, .degrau, .multidao, .trilha, .controle,
     .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-logo, .fim-corpo > *, .caso, [data-alvo="rodape"]) {
     animation: subir .6s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--k, 0) * 65ms + 80ms);
   }
@@ -646,3 +646,37 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 @media (max-height: 860px) and (min-width: 861px) { .comp .opcao { padding: 10px 16px; } .economia { padding: 8px 16px; } }
 .comp .opcao { padding-block: clamp(10px, 1.8vh, 22px); }
 @media (max-width: 860px) { .comp .opcao-destaque { order: -1; } }
+.opcao-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Funil em pessoas ---------- */
+.funil2 { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(0, 1.5fr); gap: clamp(14px, 2.6vh, 28px) clamp(20px, 4vw, 72px); margin-top: clamp(10px, 2.4vh, 28px); align-items: center; }
+.placar-frase { font-size: 1.05em; color: var(--texto) !important; }
+.placar-frase strong { font-family: var(--fonte-titulo); color: #FF8A7A; }
+.multidao { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: clamp(4px, .9vh, 10px) clamp(3px, .5vw, 8px); }
+.pessoa { position: relative; display: block; transition: opacity .45s ease, transform .45s cubic-bezier(.2,.8,.2,1), filter .45s; }
+.pessoa svg { width: 100%; height: auto; display: block; fill: #8EA0C4; }
+.pessoa.saiu { opacity: .1; transform: scale(.72) translateY(4px); }
+.pessoa.voce svg { fill: url(#grad-pessoa) #F84434; fill: #F84434; filter: drop-shadow(0 0 6px rgba(248,68,52,.8)); }
+.pessoa.voce { transform: scale(1.25); z-index: 1; }
+.pessoa em { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); font-style: normal; font-size: .55em; font-weight: 700; color: #FF8A7A; white-space: nowrap; }
+.multidao.volta .pessoa:not(.voce) { animation: volta .6s ease both; }
+@keyframes volta { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+.trilha { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.etapa { border: 1px dashed rgba(255,255,255,.18); border-radius: 12px; padding: 8px 12px; display: grid; gap: 2px; color: var(--azul-300); transition: all .35s; }
+.etapa strong { font-family: var(--fonte-titulo); font-size: .82em; }
+.etapa-pct { font-family: var(--fonte-titulo); font-weight: 800; font-size: 1.3em; }
+.etapa small { font-size: .65em; }
+.etapa.liberado { border-style: solid; border-color: var(--linha); color: var(--texto); background: rgba(255,255,255,.03); }
+.etapa.melhor { border: 2px solid var(--vermelho-2); background: rgba(248,68,52,.10); }
+.etapa.melhor .etapa-pct { background: var(--degrade); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.funil2 .controle { grid-column: 1 / -1; margin-top: 0; }
+.funil2 .placar-num { font-size: clamp(80px, 10vw, 190px); }
+@media (max-height: 860px) and (min-width: 861px) { .funil2 .placar-num { font-size: clamp(70px, 8vw, 140px); } .multidao { gap: 4px 5px; } .etapa { padding: 6px 10px; } }
+@media (max-width: 860px) { .funil2 { grid-template-columns: 1fr; } .multidao { grid-template-columns: repeat(10, minmax(0, 1fr)); } .trilha { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.mes-inline { width: 3.6em; font: inherit; font-weight: 700; color: var(--texto); background: rgba(255,255,255,.06); border: 1px solid var(--linha); border-radius: 6px; padding: 1px 6px; }
+.comp .opcao-topo .quando { margin: 0; }
+.comp .opcao > .opcao-topo + .opcao-topo { margin-top: -6px; }
+.comp .rodape-lista li { margin-bottom: 0; }
+.comp .num-valor { font-size: clamp(17px, 1.45vw, 27px); }
+.comp .opcao { gap: clamp(3px, .8vh, 9px); }
+.slide:has(.comp) .rodape { padding-top: 6px; }

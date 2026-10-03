@@ -78,7 +78,7 @@
     abas.Institucional.slice(1).forEach(l => { if (l[0]) d.institucional[l[0].trim()] = (l[3] || "").trim(); });
     d.cidades = (abas.Cidades || []).slice(1).filter(l => l[0]).map(l => ({
       cidade: l[0].trim(), diaria_usd: lerValor(l[1]), ocupacao: lerValor(l[2]), fonte: (l[3] || "").trim()
-    })).filter(c => c.diaria_usd && c.ocupacao);
+    })).filter(c => c.cidade);
     d.textos = {};
     abas.Textos.slice(1).forEach(l => { if (l[0]) d.textos[l[0].trim()] = (l[2] || "").trim(); });
     return d;

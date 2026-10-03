@@ -286,8 +286,8 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 
 /* ---------- Rodapé das telas (sentido + premissas + aviso) ---------- */
 .rodape { margin-top: auto; padding-top: clamp(10px, 2vh, 18px); border-top: 1px solid var(--linha); font-size: .66em; color: var(--azul-300); }
-.rodape-sentido { margin: 0 0 6px; color: var(--texto-suave); font-size: 1.12em; max-width: 110ch; }
-.rodape-lista { margin: 0; padding-left: 1.1em; columns: 3 30ch; column-gap: 36px; }
+.rodape-sentido { margin: 0 0 6px; color: var(--texto-suave); font-size: 1.12em; max-width: none; }
+.rodape-lista { margin: 0; padding-left: 1.1em; }
 .rodape-lista li { break-inside: avoid; margin-bottom: 2px; }
 .rodape-aviso { margin: 6px 0 0; font-style: italic; }
 .slide > .rodape, .slide > [data-alvo="rodape"] { margin-top: auto; }
@@ -344,4 +344,35 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
   .titulo { font-size: clamp(22px, 2.2vw, 40px); }
   .num-valor { font-size: clamp(17px, 1.5vw, 28px); }
   .num.grande .num-valor { font-size: clamp(22px, 2.1vw, 38px); }
+}
+
+/* Selic: destaque do fim do grupo */
+.destaque-fim { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 18px; text-align: center;
+  margin: clamp(8px, 1.6vh, 18px) auto 0; padding: clamp(8px, 1.4vh, 14px) clamp(16px, 2vw, 32px);
+  border: 1px solid rgba(248, 68, 52, .45); background: rgba(248, 68, 52, .07); border-radius: 14px; }
+.destaque-fim span { color: var(--texto-suave); font-size: clamp(15px, 1.2vw, 22px); }
+.destaque-fim strong { font-family: var(--fonte-titulo); font-weight: 700; color: #FF8A7A; font-size: clamp(24px, 2.4vw, 46px); font-variant-numeric: tabular-nums; }
+
+/* Aluguel: consórcio à esquerda, aluguel tradicional + barracão, short stay */
+.aluguel-grade { display: grid; grid-template-columns: minmax(200px, .62fr) minmax(0, 1fr) minmax(0, 1fr); gap: clamp(14px, 2vw, 32px); align-items: stretch; }
+.aluguel-cons { display: grid; gap: clamp(8px, 1.6vh, 18px); align-content: start; padding-right: clamp(8px, 1vw, 16px); border-right: 1px solid var(--linha); }
+.aluguel-col { display: grid; gap: clamp(10px, 1.6vh, 18px); align-content: start; }
+.aluguel-col .opcao { gap: clamp(4px, 1vh, 10px); }
+.opcao-alta { height: 100%; }
+.opcao-selo { margin: 0; font-size: .68em; letter-spacing: .08em; text-transform: uppercase; color: #FF8A7A; font-weight: 700; }
+.st-campos { display: grid; gap: 8px; font-size: .82em; color: var(--azul-300); }
+.st-campos label { display: grid; grid-template-columns: 7.5em 1fr; align-items: center; gap: 10px; }
+.st-campos input, .st-campos select { font: inherit; font-size: 1.1em; color: var(--texto); background: rgba(255,255,255,.05); border: 1px solid var(--linha); border-radius: 8px; padding: 6px 10px; width: 100%; min-width: 0; }
+.st-campos select option { color: #101F3D; }
+.st-campos input::placeholder { color: var(--azul-300); opacity: .7; }
+.sem-borda { border-top: 0; padding-top: 0; }
+@media (max-width: 860px) { .aluguel-grade { grid-template-columns: 1fr; } .aluguel-cons { border-right: 0; padding-right: 0; } }
+.num { align-content: start; }
+.aluguel-col[data-alvo="dir"] { align-content: stretch; }
+@media (max-height: 860px) and (min-width: 861px) {
+  .aluguel-col { gap: 10px; }
+  .aluguel-col .opcao { padding: 10px 16px; gap: 4px; }
+  .aluguel-col .opcao-premissa { padding-top: 6px; }
+  .aluguel-cons { gap: 8px; }
+  .destaque-fim { margin-top: 6px; padding: 6px 20px; }
 }

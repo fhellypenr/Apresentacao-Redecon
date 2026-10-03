@@ -269,6 +269,7 @@
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Depois da contemplação: crédito aplicado e saldo devedor</p><div data-alvo="graf"></div></div>
       </div>
+      <div class="destaque-fim" data-alvo="fim"></div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => reagir(el, ctx, () => {
       const b = base(ctx), f = ctx.fmtReal, e = ctx.estado;
@@ -282,7 +283,9 @@
         ${numero("Crédito disponível", f(c.creditoDisponivel), e.modalidade === "embutido" ? `já sem o lance embutido de ${f(c.embutido)}` : "contemplado por sorteio", "grande")}
         ${numero("Rende no primeiro mês", f(rende1), `${ctx.fmtPct(b.rendAm, 2)} ao mês, líquido`)}
         ${numero("Primeira parcela depois de contemplar", f(parc), `${e.modalidade === "embutido" ? b.p.meses_sem_pagar_lance + " meses sem pagar e depois " : ""}saldo ÷ meses restantes`)}
-        ${numero(rende1 >= parc ? "O rendimento paga a parcela e sobra" : "O rendimento cobre da parcela", rende1 >= parc ? f(rende1 - parc) + " por mês" : ctx.fmtPct(rende1 / parc), `no fim do grupo: ${f(fim.creditoDisponivel)} aplicados, para ${f(s.pagoTotal)} pagos`, rende1 >= parc ? "positivo" : "")}`;
+        ${numero(rende1 >= parc ? "O rendimento paga a parcela e sobra" : "O rendimento cobre da parcela", rende1 >= parc ? f(rende1 - parc) + " por mês" : ctx.fmtPct(rende1 / parc), "", rende1 >= parc ? "positivo" : "")}`;
+      el.querySelector('[data-alvo="fim"]').innerHTML =
+        `<span>No fim do grupo</span><strong>${f(fim.creditoDisponivel)} aplicados</strong><span>tendo pago ${f(s.pagoTotal)} no total</span>`;
       Graficos.linhas(el.querySelector('[data-alvo="graf"]'), {
         series: [
           { nome: "Crédito aplicado", cor: COR_A, valores: depois.map(x => x.creditoDisponivel != null ? x.creditoDisponivel : c.creditoDisponivel) },
@@ -338,9 +341,10 @@
       el.querySelector('[data-alvo="nums"]').innerHTML = `
         ${numero(`Contemplado no mês ${e.mes}, você pagou`, f(a.c.pagoTotal))}
         <div class="lado-a-lado">
-          ${numero("Vendendo a carta", f(a.v.lucro), `de ganho (venda por ${f(a.v.recebe)})`, "grande" + (venceu ? " positivo" : ""))}
-          ${numero("Mesmas parcelas no CDB", f(a.cdb.ganho), "de ganho, líquido de IR", "grande")}
+          ${numero("Vende a carta por", f(a.v.recebe), "", "grande")}
+          ${numero(a.v.lucro >= 0 ? "Lucro na venda" : "Resultado da venda", f(a.v.lucro), "venda − total pago", "grande" + (a.v.lucro > 0 ? " positivo" : ""))}
         </div>
+        ${numero(venceu ? "As mesmas parcelas no CDB teriam rendido apenas" : "As mesmas parcelas no CDB teriam rendido", f(a.cdb.ganho), "de ganho, líquido de IR")}
         ${comparacao}
         ${ritmo}`;
       const itens = [], linhaCdb = [];
@@ -377,17 +381,34 @@
     id: "in-aluguel", nome: "Aluguel, short stay e barracão",
     html: ctx => `
       <h2 class="titulo">${ctx.T("in_aluguel_titulo")}</h2>
-      <div class="topo-linha">${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade"])}<div class="resumo-linha" data-alvo="resumo"></div></div>
-      <div class="tres" data-alvo="tres"></div>
+      ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade"])}
+      <div class="aluguel-grade">
+        <div class="aluguel-cons" data-alvo="resumo"></div>
+        <div class="aluguel-col" data-alvo="esq"></div>
+        <div class="aluguel-col" data-alvo="dir"></div>
+      </div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => {
       const cidades = (ctx.D.cidades || []).filter(c => c.cidade);
-      const st = { cidade: cidades[0] ? cidades[0].cidade : "Personalizado", diaria: 0, ocupacao: 0 };
+      const OUTRA = "Outra cidade";
+      const ocupPadrao = Math.round((ctx.D.parametros.st_ocupacao || 0.75) * 100);
+      const st = { cidade: cidades[0] ? cidades[0].cidade : OUTRA, diaria: "", ocupacao: ocupPadrao };
       const aplicarCidade = () => {
         const c = cidades.find(x => x.cidade === st.cidade);
-        if (c) { st.diaria = Math.round(c.diaria_usd * dolar(ctx)); st.ocupacao = Math.round(c.ocupacao * 1000) / 10; }
+        st.diaria = c && c.diaria_usd ? Math.round(c.diaria_usd * dolar(ctx)) : "";
       };
       aplicarCidade();
+      // Só o short stay muda quando o cliente mexe na cidade, diária ou ocupação
+      const desenharShort = (V, parc, cobre) => {
+        const f = ctx.fmtReal, p = ctx.D.parametros, caixa = el.querySelector('[data-alvo="res-st"]');
+        if (!caixa) return;
+        if (!(+st.diaria > 0)) { caixa.innerHTML = `<p class="opcao-premissa sem-borda">Escolha a cidade ou digite a diária para calcular.</p>`; return; }
+        const ss = Motor.shortStay({ diaria: +st.diaria, ocupacao: st.ocupacao / 100, custos: p.st_custos });
+        caixa.innerHTML = `
+          ${numero("Líquido por mês", f(ss.liquido), `receita de ${f(ss.receitaBruta)} menos ${ctx.fmtPct(p.st_custos)} de custos`)}
+          <p class="resultado ${ss.liquido >= parc ? "positivo" : ""}">${cobre(ss.liquido)}</p>`;
+      };
+      let ultimo = null;
       const desenhar = () => {
         const b = base(ctx), f = ctx.fmtReal, e = ctx.estado, p = b.p;
         const s = cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade, comSeguro: true });
@@ -395,49 +416,61 @@
         const pm = s.meses.find(x => x.fase === "depois" && x.parcela > 0) || { parcela: 0, seguro: 0 };
         const parc = pm.parcela + (pm.seguro || 0);
         const alug = Motor.aluguelTradicional({ valorImovel: V, taxaAm: p.aluguel_am });
-        const ss = Motor.shortStay({ diaria: st.diaria, ocupacao: st.ocupacao / 100, custos: p.st_custos });
-        const barr = Motor.aluguelTradicional({ valorImovel: V, taxaAm: p.aluguel_barracao_am || 0.01 });
+        const taxaBarr = p.aluguel_barracao_am || 0.01;
+        const barr = Motor.aluguelTradicional({ valorImovel: V, taxaAm: taxaBarr });
         const cobre = x => x >= parc ? `paga a parcela e sobram ${f(x - parc)}` : `cobre ${ctx.fmtPct(x / parc)} da parcela`;
+        ultimo = { V, parc, cobre };
         el.querySelector('[data-alvo="resumo"]').innerHTML = `
-          ${numero("Crédito para investir", f(V), `contemplação no mês ${e.mes}`)}
+          <p class="nums-titulo">No consórcio</p>
+          ${numero("Crédito para investir", f(V), `contemplação no mês ${e.mes}`, "grande")}
           ${numero("Parcela depois de contemplar", f(parc), "com seguro prestamista")}`;
-        const opCid = cidades.map(c => `<option ${c.cidade === st.cidade ? "selected" : ""}>${ctx.esc(c.cidade)}</option>`).join("") +
-          `<option ${st.cidade === "Personalizado" ? "selected" : ""}>Personalizado</option>`;
-        el.querySelector('[data-alvo="tres"]').innerHTML = `
+        el.querySelector('[data-alvo="esq"]').innerHTML = `
           <div class="opcao">
             <h3>Aluguel tradicional</h3>
             ${numero(`Aluguel por mês (${ctx.fmtPct(p.aluguel_am, 1)} do imóvel)`, f(alug))}
             <p class="resultado ${alug >= parc ? "positivo" : ""}">${cobre(alug)}</p>
-            <p class="opcao-premissa">Casa ou apartamento com contrato residencial.</p>
-          </div>
-          <div class="opcao">
-            <h3>Short stay (Airbnb e similares)</h3>
-            <div class="mini-ctl">
-              <label>Cidade <select data-st="cidade">${opCid}</select></label>
-              <label>Diária R$ <input data-st="diaria" type="number" min="0" step="10" value="${st.diaria}"></label>
-              <label>Ocupação <input data-st="ocupacao" type="number" min="0" max="100" step="1" value="${st.ocupacao}"> %</label>
-            </div>
-            ${numero("Líquido por mês", f(ss.liquido), `receita de ${f(ss.receitaBruta)} menos ${ctx.fmtPct(p.st_custos)} de custos`)}
-            <p class="resultado ${ss.liquido >= parc ? "positivo" : ""}">${cobre(ss.liquido)}</p>
-            <p class="opcao-premissa">Média de mercado da cidade (AirROI, ago/2025 a jul/2026). Imóveis bem localizados e bem geridos costumam superar a média.</p>
           </div>
           <div class="opcao opcao-destaque">
+            <p class="opcao-selo">Fora do tradicional</p>
             <h3>Barracão comercial</h3>
-            ${numero(`Aluguel por mês (${ctx.fmtPct(p.aluguel_barracao_am || 0.01, 1)} do investido)`, f(barr))}
+            ${numero(`Aluguel por mês (${ctx.fmtPct(taxaBarr, 1)} do investido)`, f(barr))}
             <p class="resultado ${barr >= parc ? "positivo" : ""}">${cobre(barr)}</p>
             <p class="opcao-premissa">${ctx.T("in_barracao_obs")}</p>
           </div>`;
-        el.querySelectorAll("[data-st]").forEach(i => i.addEventListener("change", () => {
+        const opCid = cidades.map(c => `<option ${c.cidade === st.cidade ? "selected" : ""}>${ctx.esc(c.cidade)}</option>`).join("") +
+          `<option ${st.cidade === OUTRA ? "selected" : ""}>${OUTRA}</option>`;
+        el.querySelector('[data-alvo="dir"]').innerHTML = `
+          <div class="opcao opcao-alta">
+            <h3>Short stay (Airbnb e similares)</h3>
+            <div class="st-campos">
+              <label>Cidade <select data-st="cidade">${opCid}</select></label>
+              <label>Diária (R$) <input data-st="diaria" type="number" min="0" step="10" inputmode="numeric" placeholder="digite" value="${st.diaria}"></label>
+              <label>Ocupação (%) <input data-st="ocupacao" type="number" min="0" max="100" step="1" inputmode="numeric" value="${st.ocupacao}"></label>
+            </div>
+            <div data-alvo="res-st"></div>
+          </div>`;
+        desenharShort(V, parc, cobre);
+        el.querySelectorAll("[data-st]").forEach(i => {
           const k = i.dataset.st;
-          if (k === "cidade") { st.cidade = i.value; aplicarCidade(); }
-          else { const v = +i.value; if (v >= 0) { st[k] = v; st.cidade = "Personalizado"; } }
-          desenhar();
-        }));
+          i.addEventListener(k === "cidade" ? "change" : "input", () => {
+            if (k === "cidade") {
+              st.cidade = i.value; aplicarCidade();
+              el.querySelector('[data-st="diaria"]').value = st.diaria;
+            } else if (k === "diaria") {
+              st.diaria = i.value === "" ? "" : Math.max(0, +i.value);
+              if (st.cidade !== OUTRA) { st.cidade = OUTRA; el.querySelector('[data-st="cidade"]').value = OUTRA; }
+            } else {
+              const v = +i.value; if (i.value !== "" && v >= 0 && v <= 100) st.ocupacao = v;
+            }
+            desenharShort(ultimo.V, ultimo.parc, ultimo.cobre);
+          });
+        });
         el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {
           sentido: ctx.T("in_aluguel_sentido"),
           itens: [
-            `Short stay com 30,4 dias por mês e ${ctx.fmtPct(p.st_custos)} de custos (plataforma, limpeza, gestão e contas).`,
-            `Diária convertida pelo dólar do dia (R$ ${dolar(ctx).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}).`,
+            `Aluguel tradicional de ${ctx.fmtPct(p.aluguel_am, 1)} e barracão de ${ctx.fmtPct(taxaBarr, 1)} ao mês sobre o crédito investido.`,
+            `Short stay: 30,4 dias por mês, ocupação padrão de ${ocupPadrao}% e ${ctx.fmtPct(p.st_custos)} de custos (plataforma, limpeza, gestão e contas).`,
+            `Diária das cidades convertida pelo dólar do dia (R$ ${dolar(ctx).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}).`,
             "O resultado depende da localização, do tipo de imóvel e da gestão."
           ]
         });

@@ -35,7 +35,7 @@
 
   // Consórcio × financiamento do mesmo valor. Usado no comparativo e no fechamento.
   // Com reajuste: até a contemplação reajustam crédito e parcela; depois, só o saldo (e a parcela proporcionalmente).
-  function compararFinanciamento(b, { mes, comReaj = true, sistema = "SAC" }) {
+  function compararFinanciamento(b, { mes, comReaj = true, sistema = "Price" }) {
     const p = b.p, V = b.credito;
     const fn = sistema === "Price" ? Motor.financiamentoPrice : Motor.financiamentoSAC;
     const fin = fn({ valorImovel: V, entrada: p.fin_entrada, taxaAa: p.fin_taxa_aa, trAa: p.tr_aa, prazo: p.fin_prazo });
@@ -138,9 +138,10 @@
       <div class="economia" data-alvo="economia"></div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => {
-      let comReaj = true, sistema = "SAC";
+      let comReaj = true;
       reagir(el, ctx, () => {
         const b = base(ctx), f = ctx.fmtReal, p = b.p, V = b.credito, e = ctx.estado;
+        const sistema = e.sistema || "Price";
         const pct = v => ctx.fmtPct(v);
         const r = compararFinanciamento(b, { mes: e.mes, comReaj, sistema });
         const rendeMes = V * cdbLiquidoAm(b);
@@ -157,7 +158,7 @@
           <div class="opcao">
             <div class="opcao-topo"><h3>Financiamento</h3>
               <div class="seg seg-mini" role="group" aria-label="Tabela do financiamento">
-                <button data-sis="SAC" aria-pressed="${sistema === "SAC"}">SAC</button><button data-sis="Price" aria-pressed="${sistema === "Price"}">Price</button></div></div>
+                <button data-sis="Price" aria-pressed="${sistema === "Price"}">Price</button><button data-sis="SAC" aria-pressed="${sistema === "SAC"}">SAC</button></div></div>
             <p class="quando">Imóvel <strong>na hora</strong></p>
             ${linha("Entrada", f(r.fin.valorEntrada), pct(p.fin_entrada) + " do imóvel")}
             ${linha("Parcela inicial", f(r.fin.primeiraParcela), `${sistema}, ${p.fin_prazo} meses`)}
@@ -180,7 +181,7 @@
           <span>que no financiamento, e sem entrada.</span>` : `
           <span>Neste cenário, o custo do consórcio fica próximo ao do financiamento, mas sem entrada e sem se descapitalizar.</span>`;
         el.querySelectorAll("[data-reaj]").forEach(x => x.addEventListener("click", () => { comReaj = x.dataset.reaj === "1"; el._redesenhar(); }));
-        el.querySelectorAll("[data-sis]").forEach(x => x.addEventListener("click", () => { sistema = x.dataset.sis; el._redesenhar(); }));
+        el.querySelectorAll("[data-sis]").forEach(x => x.addEventListener("click", () => { e.sistema = x.dataset.sis; ctx.mudou(); }));
         const inMes = el.querySelector("[data-mes-comp]");
         inMes.addEventListener("change", () => { const v = Math.round(+inMes.value); if (v >= 1) { e.mes = Math.min(v, b.prazo - 1); ctx.mudou(); } });
         el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {

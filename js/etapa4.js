@@ -177,8 +177,9 @@
 
         const s0 = H.cota(b, { modalidade: "nenhuma" });
         const parc = s0.meses[0].parcela;
-        const fin = Motor.financiamentoSAC({ valorImovel: V, entrada: p.fin_entrada, taxaAa: p.fin_taxa_aa, trAa: p.tr_aa, prazo: p.fin_prazo });
-        const cmp = H.compararFinanciamento(b, { mes: e.mes, comReaj: true, sistema: "SAC" });
+        const sistema = e.sistema || "Price";
+        const cmp = H.compararFinanciamento(b, { mes: e.mes, comReaj: true, sistema });
+        const fin = cmp.fin;
         const m5 = Math.min(61, b.prazo), l5 = s0.meses[m5 - 1];
         const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
         const c = sc.contemplacao, rende1 = c.creditoDisponivel * b.rendAm, pPos = sc.parcelaPosInicial;
@@ -192,8 +193,8 @@
           card("Seu consórcio",
             H.numero("Crédito", f(V), `${b.prazo} meses`, "grande") +
             H.numero(b.meia ? "Meia parcela" : "Parcela", f(parc, 2), `taxa de ${ctx.fmtPct(b.taxaAdm / b.prazo, 3)} ao mês, sem juros`), "plano-destaque") +
-          card("Aquisição",
-            H.numero("Juros de um financiamento", f(fin.totalJuros), `para financiar o mesmo valor a ${ctx.fmtPct(p.fin_taxa_aa, 2)} ao ano + TR`) +
+          card(`Aquisição <span class="seg seg-mini seg-card" role="group" aria-label="Tabela do financiamento"><button data-sis="Price" aria-pressed="${sistema === "Price"}">Price</button><button data-sis="SAC" aria-pressed="${sistema === "SAC"}">SAC</button></span>`,
+            H.numero("Juros de um financiamento", f(fin.totalJuros), `para financiar o mesmo valor (${sistema}) a ${ctx.fmtPct(p.fin_taxa_aa, 2)} ao ano + TR`) +
             H.numero("Mesmo com os reajustes, você economiza", f(cmp.economia), `contemplado no mês ${e.mes}, comparado ao financiamento, e sem ${f(fin.valorEntrada)} de entrada`, cmp.economia > 0 ? "positivo" : "")) +
           card("Poupança",
             H.numero(`Crédito em ${Math.floor((m5 - 1) / 12)} anos`, f(l5.creditoAtual), `+${f(l5.creditoAtual - V)} de reajuste`) +
@@ -207,10 +208,11 @@
           card("Renda com aluguel",
             H.numero("Aluguel tradicional", f(alug) + " por mês", `${ctx.fmtPct(p.aluguel_am, 1)} do imóvel`) +
             (alt ? H.numero(ctx.esc(alt.nome), f(altV) + " por mês", `${ctx.fmtPct(alt.taxa_am, 1)} do investido`, altV >= pPos ? "positivo" : "") : ""));
+        el.querySelectorAll("[data-sis]").forEach(x => x.addEventListener("click", () => { e.sistema = x.dataset.sis; ctx.mudou(); }));
         el.querySelector('[data-alvo="rodape"]').innerHTML = H.rodape(ctx, {
           itens: [
             `Reajuste de ${ctx.fmtPct(b.reajuste)} ao ano; crédito contemplado rendendo ${ctx.fmtPct(p.pct_selic_credito)} da Selic (${ctx.fmtPct(p.selic, 2)} ao ano), líquido de IR; venda com ágio de ${ctx.fmtPct(e.agio)}.`,
-            `Financiamento SAC com ${ctx.fmtPct(p.fin_entrada)} de entrada e ${p.fin_prazo} meses; aluguel sobre o crédito disponível na contemplação.`
+            `Financiamento ${sistema} com ${ctx.fmtPct(p.fin_entrada)} de entrada e ${p.fin_prazo} meses; aluguel sobre o crédito disponível na contemplação.`
           ]
         });
       });

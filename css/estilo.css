@@ -680,3 +680,7 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 .comp .num-valor { font-size: clamp(17px, 1.45vw, 27px); }
 .comp .opcao { gap: clamp(3px, .8vh, 9px); }
 .slide:has(.comp) .rodape { padding-top: 6px; }
+.plano-card .opcao-selo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.seg-card { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.seg-card button { font-size: 1.1em; padding: .2em .7em; }
+.seg-card { padding: 1px; } .seg-card button { font-size: 1em; padding: 0 .6em; line-height: 1.5; }

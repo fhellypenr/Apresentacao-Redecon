@@ -160,6 +160,7 @@
       prazo: p.ex_prazo || 220,
       meia: String(p.ex_parcela || "meia").toLowerCase() !== "cheia",
       mes: 36, modalidade: "sorteio",
+      sistema: "Price", // tabela do financiamento nas comparações (Price por padrão; SAC opcional)
       agio: p.agio_venda != null ? p.agio_venda : 0.2
     };
   }

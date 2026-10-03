@@ -285,7 +285,7 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
 
 
 /* ---------- Rodapé das telas (sentido + premissas + aviso) ---------- */
-.rodape { margin-top: auto; padding-top: clamp(10px, 2vh, 18px); border-top: 1px solid var(--linha); font-size: .66em; color: var(--azul-300); }
+.rodape { margin-top: auto; padding-top: clamp(8px, 1.5vh, 14px); border-top: 1px solid var(--linha); font-size: .6em; color: var(--azul-300); }
 .rodape-sentido { margin: 0 0 6px; color: var(--texto-suave); font-size: 1.12em; max-width: none; }
 .rodape-lista { margin: 0; padding-left: 1.1em; }
 .rodape-lista li { break-inside: avoid; margin-bottom: 2px; }
@@ -376,3 +376,18 @@ label.ctl:has(em) > span { grid-column: 1 / -1; }
   .aluguel-cons { gap: 8px; }
   .destaque-fim { margin-top: 6px; padding: 6px 20px; }
 }
+
+/* Selic: destaque menor, alinhado à direita embaixo do gráfico */
+.dois .destaque-fim { margin: clamp(8px, 1.4vh, 14px) 0 0 auto; width: fit-content; max-width: 100%; justify-content: flex-end; padding: 8px 18px; gap: 2px 12px; }
+.dois .destaque-fim span { font-size: clamp(13px, 1vw, 18px); }
+.dois .destaque-fim strong { font-size: clamp(20px, 1.7vw, 32px); }
+/* Venda */
+.linha-info { margin: 0; color: var(--texto-suave); font-size: .8em; }
+.linha-info strong { color: var(--texto); font-family: var(--fonte-titulo); }
+.grade-venda { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(10px, 2vh, 22px) 20px; }
+.orientacao-curta { margin: 0; padding: 6px 12px; border-left: 3px solid var(--azul-300); font-size: .78em; color: var(--texto-suave); background: rgba(142,160,196,.08); border-radius: 0 8px 8px 0; }
+.orientacao-curta strong { color: var(--texto); }
+@media (max-width: 860px) { .grade-venda { grid-template-columns: 1fr; } }
+.nums .ritmo { font-size: .72em !important; }
+.dois-venda { grid-template-columns: minmax(300px, 1fr) minmax(0, 1.45fr); }
+@media (max-width: 860px) { .dois-venda { grid-template-columns: 1fr; } }

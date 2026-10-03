@@ -267,9 +267,9 @@
       ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade"])}
       <div class="dois">
         <div class="nums" data-alvo="nums"></div>
-        <div><p class="graf-titulo">Depois da contemplação: crédito aplicado e saldo devedor</p><div data-alvo="graf"></div></div>
+        <div><p class="graf-titulo">Depois da contemplação: crédito aplicado e saldo devedor</p><div data-alvo="graf"></div>
+          <div class="destaque-fim" data-alvo="fim"></div></div>
       </div>
-      <div class="destaque-fim" data-alvo="fim"></div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => reagir(el, ctx, () => {
       const b = base(ctx), f = ctx.fmtReal, e = ctx.estado;
@@ -310,7 +310,7 @@
     html: ctx => `
       <h2 class="titulo">${ctx.T("in_venda_titulo")}</h2>
       ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade", "agio"])}
-      <div class="dois">
+      <div class="dois dois-venda">
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Ganho conforme o mês da contemplação (toque numa barra para escolher)</p><div data-alvo="graf"></div></div>
       </div>
@@ -332,20 +332,21 @@
       const a = calc(e.mes);
       const venceu = a.v.lucro > a.cdb.ganho;
       const vezes = a.cdb.ganho > 0 ? a.v.lucro / a.cdb.ganho : null;
-      const comparacao = venceu
-        ? numero("Diferença a favor da venda", f(a.v.lucro - a.cdb.ganho),
-            vezes && vezes >= 1.5 ? `${vezes.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} vezes o ganho do CDB` : "acima do ganho do CDB", "positivo")
-        : `<div class="orientacao"><strong>${ctx.T("in_venda_orientacao_t")}</strong><p>${ctx.T("in_venda_orientacao")}</p></div>`;
+      const dif = a.v.lucro - a.cdb.ganho;
+      const vezesTxt = venceu && vezes && vezes >= 1.5 ? `${vezes.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} vezes o ganho do CDB` : "";
       const ritmo = a.tirVenda != null && a.tirCdb != null
         ? `<p class="ritmo">Rendimento equivalente: <strong>${pctTxt(a.tirVenda, 2)} ao mês</strong> na venda, contra ${pctTxt(a.tirCdb, 2)} ao mês no CDB.</p>` : "";
+      const orientacao = venceu ? "" :
+        `<p class="orientacao-curta"><strong>${ctx.T("in_venda_orientacao_t")}</strong> ${ctx.T("in_venda_orientacao")}</p>`;
       el.querySelector('[data-alvo="nums"]').innerHTML = `
-        ${numero(`Contemplado no mês ${e.mes}, você pagou`, f(a.c.pagoTotal))}
-        <div class="lado-a-lado">
+        <p class="linha-info">Contemplado no mês ${e.mes}, você pagou <strong>${f(a.c.pagoTotal)}</strong></p>
+        <div class="grade-venda">
           ${numero("Vende a carta por", f(a.v.recebe), "", "grande")}
-          ${numero(a.v.lucro >= 0 ? "Lucro na venda" : "Resultado da venda", f(a.v.lucro), "venda − total pago", "grande" + (a.v.lucro > 0 ? " positivo" : ""))}
+          ${numero(a.v.lucro >= 0 ? "Lucro na venda" : "Resultado da venda", f(a.v.lucro), "venda − total pago", "grande" + (a.v.lucro > 0 && venceu ? " positivo" : ""))}
+          ${numero(venceu ? "No CDB, apenas" : "No CDB", f(a.cdb.ganho), "mesmas parcelas, líquido de IR", venceu ? "" : "positivo")}
+          ${numero(venceu ? "A favor da venda" : "A favor do CDB", f(Math.abs(dif)), vezesTxt, venceu ? "positivo" : "")}
         </div>
-        ${numero(venceu ? "As mesmas parcelas no CDB teriam rendido apenas" : "As mesmas parcelas no CDB teriam rendido", f(a.cdb.ganho), "de ganho, líquido de IR")}
-        ${comparacao}
+        ${orientacao}
         ${ritmo}`;
       const itens = [], linhaCdb = [];
       const limite = Math.min(b.prazo - 1, 120);
@@ -368,10 +369,8 @@
       el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {
         sentido: ctx.T("in_venda_sentido"),
         itens: [
-          `Valor da venda = ágio de ${ctx.fmtPct(e.agio)} sobre o crédito líquido na contemplação.`,
-          "Ganho na venda = valor da venda − total pago.",
-          `CDB a ${ctx.fmtPct(b.p.cdb_pct_cdi)} do CDI, com IR conforme o prazo de cada parcela.`,
-          "Rendimento equivalente: taxa mensal que transforma as parcelas pagas no valor recebido."
+          `Venda com ágio de ${ctx.fmtPct(e.agio)} sobre o crédito líquido na contemplação; lucro = venda − total pago.`,
+          `CDB a ${ctx.fmtPct(b.p.cdb_pct_cdi)} do CDI, IR conforme o prazo de cada parcela; rendimento equivalente = taxa mensal que leva as parcelas pagas ao valor recebido.`
         ]
       });
     })

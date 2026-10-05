@@ -379,7 +379,7 @@
   function montar() {
     const idAtual = LISTA[atual] ? LISTA[atual].id : null;
     ROTEIRO = construirRoteiro();
-    SECOES = ROTEIRO.map(sec => Object.assign({}, sec, { telas: sec.telas.filter(t => telaLigada(t.id)) })).filter(sec => sec.telas.length);
+    SECOES = ROTEIRO.map(sec => Object.assign({}, sec, { telas: sec.telas.filter(t => t.oculta || telaLigada(t.id)) })).filter(sec => sec.telas.some(t => !t.oculta));
     LISTA = SECOES.flatMap((s, si) => s.telas.map(t => Object.assign({ secao: si }, t)));
     if (idAtual) { const k = LISTA.findIndex(t => t.id === idAtual); if (k >= 0) atual = k; }
     if (!estado) estado = criarEstado();
@@ -403,7 +403,7 @@
 
   function montarMenu() {
     $("#lista-menu").innerHTML = SECOES.map((s, si) => {
-      return `<div class="menu-secao"><h3>${esc(s.nome)}</h3>${s.telas.map(t => {
+      return `<div class="menu-secao"><h3>${esc(s.nome)}</h3>${s.telas.filter(t => !t.oculta).map(t => {
         const i = LISTA.findIndex(x => x.id === t.id);
         return `<button data-ir="${i}">${esc(t.nome || s.nome)}</button>`;
       }).join("")}</div>`;
@@ -416,7 +416,7 @@
     const caixa = $("#aj-telas");
     if (!caixa) return;
     caixa.innerHTML = ROTEIRO.map(sec => {
-      const itens = sec.telas.map(t => `<label class="tela-op"><input type="checkbox" data-tela="${esc(t.id)}" ${telaLigada(t.id) ? "checked" : ""} ${t.id === "capa" ? "disabled" : ""}> ${esc(t.nome || sec.nome)}</label>`).join("");
+      const itens = sec.telas.filter(t => !t.oculta).map(t => `<label class="tela-op"><input type="checkbox" data-tela="${esc(t.id)}" ${telaLigada(t.id) ? "checked" : ""} ${t.id === "capa" ? "disabled" : ""}> ${esc(t.nome || sec.nome)}</label>`).join("");
       const vazio = sec.semCasos ? `<p class="tela-nota">Nenhum caso autorizado na planilha (aba Casos).</p>` : "";
       return `<div class="tela-grupo"><span>${esc(sec.nome)}</span>${itens}${vazio}</div>`;
     }).join("");
@@ -463,7 +463,14 @@
   function avancar() {
     const el = $(`.slide[data-i="${atual}"]`);
     if (el && el._avancar && el._avancar()) return;
-    ir(atual + 1);
+    ir(vizinha(1));
+  }
+  function voltar() { ir(vizinha(-1)); }
+  // Próxima/anterior pulando as telas ocultas (ex.: proposta, que só abre pelo botão do "O seu plano")
+  function vizinha(dir) {
+    let k = atual + dir;
+    while (k >= 0 && k < LISTA.length && LISTA[k].oculta) k += dir;
+    return k;
   }
 
   function ir(i, inicial) {
@@ -537,7 +544,7 @@
     if (pelaUrl >= 0) ir(pelaUrl, true);
     mostrarStatus();
 
-    $("#bt-ant").addEventListener("click", () => ir(atual - 1));
+    $("#bt-ant").addEventListener("click", voltar);
     $("#bt-prox").addEventListener("click", avancar);
     $("#bt-menu").addEventListener("click", () => abrir("#menu"));
     $("#bt-ajustes").addEventListener("click", () => abrir("#ajustes"));
@@ -556,7 +563,7 @@
     document.addEventListener("keydown", e => {
       if (e.target.closest("input, select, textarea, .graf")) return;
       if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); avancar(); }
-      if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); ir(atual - 1); }
+      if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); voltar(); }
       if (e.key === "Escape") fecharPaineis();
     });
     window.addEventListener("hashchange", () => {
@@ -568,7 +575,7 @@
     $(".palco").addEventListener("touchend", e => {
       if (x0 == null) return;
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) avancar(); else ir(atual - 1); }
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) avancar(); else voltar(); }
       x0 = null;
     });
   }

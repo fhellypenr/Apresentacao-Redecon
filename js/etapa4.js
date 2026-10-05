@@ -76,7 +76,19 @@
       </div>`,
     iniciar: (el) => {
       const caixa = el.querySelector(".virada");
-      const etapa2 = () => { caixa.classList.remove("virada-etapa1"); caixa.classList.add("virada-etapa2"); };
+      const etapa2 = () => {
+        if (!caixa.classList.contains("virada-etapa1")) return;
+        const antes = caixa.querySelector(".virada-antes");
+        const r0 = antes.getBoundingClientRect();
+        caixa.classList.remove("virada-etapa1"); caixa.classList.add("virada-etapa2");
+        if (!document.documentElement.classList.contains("animado") || !antes.animate) return;
+        const r1 = antes.getBoundingClientRect();
+        const dx = r0.left - r1.left, dy = r0.top - r1.top, sx = r0.width / r1.width, sy = r0.height / r1.height;
+        antes.animate([
+          { transformOrigin: "top left", transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 1 },
+          { transformOrigin: "top left", transform: "none", opacity: .55 }
+        ], { duration: 650, easing: "cubic-bezier(.2,.8,.2,1)" });
+      };
       el.querySelector('[data-acao="virada"]').addEventListener("click", etapa2);
       // "Próxima" na etapa 1 mostra o consórcio de hoje antes de trocar de tela
       el._avancar = () => { if (caixa.classList.contains("virada-etapa1")) { etapa2(); return true; } return false; };
@@ -149,6 +161,7 @@
       const ctl = A().controles(ctx, ["credito", "prazo", "parcela", "mes"]).replace(/^<div class="controles">|<\/div>$/g, "");
       return `
       <h2 class="titulo" data-alvo="titulo"></h2>
+      <button class="btn-gerar-prop" data-acao="abrir-proposta" title="Gerar proposta direcionada"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><span>Gerar proposta</span></button>
       <div class="controles">
         <div class="ctl"><span>Calcular pela</span><div class="seg" role="group">
           <button data-modo="parcela" aria-pressed="false">Parcela</button><button data-modo="credito" aria-pressed="true">Crédito</button></div></div>
@@ -161,6 +174,7 @@
     },
     iniciar: (el, ctx) => {
       const H = A();
+      el.querySelector('[data-acao="abrir-proposta"]').addEventListener("click", () => ctx.irPara("proposta"));
       let modo = "credito", parcelaDesejada = null;
       const campoParc = el.querySelector('[data-campo="parcela"]'), inParc = el.querySelector('[data-f="parcela"]');
       const campoCred = el.querySelector('[data-ctl="credito"]').closest(".ctl");
@@ -311,9 +325,9 @@
     }
   }
   const proposta = {
-    id: "proposta", nome: "Proposta direcionada",
+    id: "proposta", nome: "Proposta direcionada", oculta: true,
     html: ctx => `
-      <h2 class="titulo">${ctx.T("prop_titulo")}</h2>
+      <div class="prop-topo"><h2 class="titulo">${ctx.T("prop_titulo")}</h2><button class="btn-voltar-plano" data-acao="voltar-plano"><span aria-hidden="true">←</span> Voltar ao plano</button></div>
       <div class="prop">
         <div class="prop-escolhas">
           <label class="prop-nome"><span class="prop-rotulo">Nome do cliente</span><input data-cliente type="text" autocomplete="off" placeholder="Digite o nome" value="${ctx.esc(ctx.ajustes.cliente || "")}"></label>
@@ -330,6 +344,7 @@
         <div class="prop-folha-caixa"><div class="prop-folha" data-alvo="folha"></div></div>
       </div>`,
     iniciar: (el, ctx) => {
+      el.querySelector('[data-acao="voltar-plano"]').addEventListener("click", () => ctx.irPara("fechamento"));
       let pilar = "aquisicao", estrategia = true;
       const blocos = new Set(SUGESTAO.aquisicao);
       const sincronizar = () => {

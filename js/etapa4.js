@@ -49,6 +49,7 @@
     caminhos: '<path d="M28 46V30"/><path d="M28 30 14 16"/><path d="M28 30 42 16"/><path d="M14 16h6M14 16v6M42 16h-6M42 16v6"/>',
     grafico: '<path d="M10 44h36"/><rect x="14" y="30" width="6" height="14"/><rect x="25" y="22" width="6" height="22"/><rect x="36" y="14" width="6" height="30"/>'
   };
+  ICO.ok = '<circle cx="28" cy="28" r="18"/><path d="M19 28l6 6 12-12"/>';
   const icone = k => `<svg class="ico" viewBox="0 0 56 56" aria-hidden="true">${ICO[k] || ICO.casa}</svg>`;
   const ICONES_HOJE = ["casa", "venda", "rende", "aluguel", "sorteio", "apoio"];
 
@@ -269,7 +270,7 @@
     const alvo = d <= 10 ? new Date(a, m, 10) : d <= 25 ? new Date(a, m, 25) : new Date(a, m + 1, 10);
     return alvo.toLocaleDateString("pt-BR");
   }
-  function numerosProposta(ctx) {
+  function numerosProposta(ctx, mod) {
     const H = A(), e = ctx.estado, b = H.base(ctx), p = b.p;
     const parc = Motor.parcela({ credito: b.credito, prazo: b.prazo, taxaTotal: b.taxaTotal, meia: b.meia });
     const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
@@ -287,7 +288,7 @@
     const rendeVista = b.credito * H.cdbLiquidoAm(b);
     return { b, e, p, parc, c, cred, cmp, venda, cdb, alt, credAno, parcAno, f4, rendeVista,
       rende1: cred * b.rendAm, parcPos: sc.parcelaPosInicial,
-      alug: cred * p.aluguel_am, altV: alt ? cred * alt.taxa_am : 0, sistema: e.sistema || "Price" };
+      alug: cred * p.aluguel_am, altV: alt ? cred * alt.taxa_am : 0, sistema: e.sistema || "Price", mod: mod || e.modalidade };
   }
   // ---------- Mini ilustrações da folha (poucos números, visual que lembra o que foi visto) ----------
   // Barras horizontais sem valores: só a proporção entre as coisas
@@ -303,9 +304,10 @@
       <div class="pf-mc-col"><i class="${k === 0 ? "neutra" : ""}" style="height:${(30 + (i.v - min) / ((max - min) || 1) * 70).toFixed(0)}%"></i><span>${i.r}</span></div>`).join("")}
       <svg class="pf-mc-seta" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M4 34 L96 6"/><path d="M84 5 L96 6 L91 17"/></svg></div>`;
   };
+  const MOD_TXT = { sorteio: "por sorteio", embutido: "por lance embutido", ambos: "por sorteio ou lance" };
   // Conteúdo de cada opção: frase curta, ilustração e uma linha pequena de números
   function bloco(k, n, ctx) {
-    const f = v => ctx.fmtReal(v, 2), mes = n.e.mes;
+    const f = v => ctx.fmtReal(v, 2), mes = n.e.mes, cen = `no mês ${mes} ${MOD_TXT[n.mod]}`;
     switch (k) {
       case "comparativo": return {
         frase: ["O mesmo imóvel, sem entrada e sem juros:", "a diferença no total pago é grande."],
@@ -314,21 +316,25 @@
       case "reajuste": return {
         frase: ["Mesmo antes da contemplação,", "o seu crédito é reajustado todo ano."],
         visual: miniColunas([{ r: "Hoje", v: n.b.credito }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }]),
-        num: `Em 5 anos, crédito de <b>${f(n.credAno(5))}</b>; a parcela acompanha na mesma proporção (${f(n.parcAno(5))}).` };
+        num: `Em 5 anos, <b>+${f(n.credAno(5) - n.b.credito)}</b> de crédito, com a parcela subindo apenas ${f(n.parcAno(5) - n.parc)}.` };
       case "rendendo": return {
         frase: ["Contemplado, você não é obrigado a usar o crédito:", "ele fica rendendo sobre o valor total."],
         visual: miniBarras([{ r: "Rendimento", sub: "por mês", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
-        num: `Contemplando no mês ${mes}, cerca de <b>${f(n.rende1)}</b> de rendimento no 1º mês, com a Selic de hoje.` };
+        num: `Contemplando ${cen}, cerca de <b>${f(n.rende1)}</b> de rendimento no 1º mês, com a Selic de hoje.` };
       case "venda": return {
         frase: ["Liberdade para vender a carta contemplada,", n.venda.lucro > n.cdb.ganho ? "com ganho acima de uma aplicação tradicional." : "se for o melhor caminho no momento."],
         visual: miniBarras([{ r: "Venda da carta", v: n.venda.lucro }, { r: "Aplicação", sub: "mesmas parcelas", v: n.cdb.ganho, cls: "neutra" }]),
-        num: `Ganho estimado de <b>${f(n.venda.lucro)}</b> na venda, contra ${f(n.cdb.ganho)} das mesmas parcelas aplicadas.` };
+        num: `Contemplando ${cen}, ganho estimado de <b>${f(n.venda.lucro)}</b> na venda, contra ${f(n.cdb.ganho)} das mesmas parcelas aplicadas.` };
       default: {
         const melhor = n.alt && n.altV > n.alug ? { nome: ctx.esc(n.alt.nome).toLowerCase(), v: n.altV } : { nome: "aluguel tradicional", v: n.alug };
+        const cob = melhor.v / n.parcPos;
         return {
           frase: ["O imóvel trabalha para você e aumenta o seu patrimônio:", melhor.v >= n.parcPos ? "o aluguel pode pagar a parcela inteira." : "o aluguel ajuda a pagar a parcela."],
-          visual: miniBarras([{ r: "Aluguel", v: melhor.v }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
-          num: `Com ${melhor.nome}, cerca de <b>${f(melhor.v)}/mês</b>, para uma parcela de ${f(n.parcPos)}.` };
+          visual: `<div class="pf-fluxo">
+            <div>${icone("casa")}<strong>Imóvel</strong><span>seu patrimônio</span></div><i aria-hidden="true">→</i>
+            <div>${icone("aluguel")}<strong>Aluguel</strong><span>renda passiva</span></div><i aria-hidden="true">→</i>
+            <div class="ok">${icone("ok")}<strong>Parcela</strong><span>${cob >= 1 ? "paga pelo aluguel" : cob >= .8 ? "quase toda paga" : "subsidiada"}</span></div></div>`,
+          num: `Com ${melhor.nome}, a renda estimada cobre <b>${cob >= 1 ? "a parcela inteira" : "cerca de " + Math.round(cob * 100) + "% da parcela"}</b>.` };
       }
     }
   }
@@ -348,7 +354,7 @@
   // Premissas da folha: só as que valem para os blocos escolhidos
   function premissas(n, marcados, ctx) {
     const tem = k => marcados.includes(k), pct = ctx.fmtPct;
-    const l = [`contemplação considerada no mês ${n.e.mes}${n.e.modalidade === "embutido" ? ", com lance embutido" : ""}`,
+    const l = [`contemplação considerada no mês ${n.e.mes}, ${MOD_TXT[n.mod]}${n.mod === "ambos" ? " (valores calculados pelo sorteio; com lance embutido, o crédito disponível é menor)" : ""}`,
       `reajuste anual de ${pct(n.b.reajuste)}`];
     if (tem("comparativo")) l.push(`financiamento ${n.sistema} a ${pct(n.p.fin_taxa_aa, 2)} ao ano + TR, com ${pct(n.p.fin_entrada)} de entrada e ${n.p.fin_prazo} meses; à vista, valor aplicado em CDB líquido de IR`);
     if (tem("rendendo")) l.push(`rendimento sobre o crédito total, e não apenas sobre o que foi pago`);
@@ -365,27 +371,37 @@
           <label class="prop-nome"><span class="prop-rotulo">Nome do cliente</span><input data-cliente type="text" autocomplete="off" placeholder="Digite o nome" value="${ctx.esc(ctx.ajustes.cliente || "")}"></label>
           <p class="prop-rotulo">Foco do cliente (Método API)</p>
           <div class="prop-chips">${Object.entries(PILAR).map(([k, p]) => `<button class="chip-op" data-pilar-p="${k}" aria-pressed="false">${p.nome}</button>`).join("")}</div>
+          <p class="prop-rotulo">Cenário de contemplação</p>
+          <div class="prop-cenario">
+            <label class="prop-mes"><span>Mês</span><input data-p-mes type="number" min="1" value="${ctx.estado.mes}"></label>
+            <div class="seg" role="group"><button data-p-mod="sorteio">Sorteio</button><button data-p-mod="embutido">Lance</button><button data-p-mod="ambos">Os dois</button></div>
+          </div>
           <p class="prop-rotulo">Blocos da proposta</p>
           <div class="prop-blocos">${Object.entries(PILAR).map(([pk, p]) => `
             <div class="prop-grupo"><span>${p.nome}</span>${p.blocos.map(k => `<label class="tela-op"><input type="checkbox" data-bloco="${k}"> ${BLOCOS[k].nome}</label>`).join("")}</div>`).join("")}
             <div class="prop-grupo"><span>Contemplação</span><label class="tela-op"><input type="checkbox" data-estrategia checked> Como chegar lá (fidelidades)</label></div>
           </div>
-          <p class="prop-nota">Crédito, parcela e mês de contemplação vêm de "O seu plano". A data e a validade entram sozinhas.</p>
+          <p class="prop-nota">Crédito, prazo e parcela vêm de "O seu plano". A data e a validade entram sozinhas.</p>
           <button class="btn btn-pdf" data-acao="pdf">Gerar PDF da proposta</button>
         </div>
         <div class="prop-folha-caixa"><div class="prop-folha" data-alvo="folha"></div></div>
       </div>`,
     iniciar: (el, ctx) => {
       el.querySelector('[data-acao="voltar-plano"]').addEventListener("click", () => ctx.irPara("fechamento"));
-      let pilar = "aquisicao", estrategia = true;
+      let pilar = "aquisicao", estrategia = true, modProp = ctx.estado.modalidade;
       const blocos = new Set(SUGESTAO.aquisicao);
       const sincronizar = () => {
+        if (modProp !== "ambos") modProp = ctx.estado.modalidade;
+        el.querySelectorAll("[data-p-mod]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pMod === modProp)));
+        const im = el.querySelector("[data-p-mes]");
+        if (document.activeElement !== im) { im.value = ctx.estado.mes; im.max = ctx.estado.prazo - 1; }
         el.querySelectorAll("[data-pilar-p]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pilarP === pilar)));
         el.querySelectorAll("[data-bloco]").forEach(c => { c.checked = blocos.has(c.dataset.bloco); });
       };
       const montar = () => {
         if (!el.isConnected) { document.removeEventListener("redecon:estado", montar); return; }
-        const n = numerosProposta(ctx), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
+        sincronizar();
+        const n = numerosProposta(ctx, modProp === "ambos" ? "ambos" : ctx.estado.modalidade), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
         const P = PILAR[pilar];
         // Foco: todos os blocos marcados do pilar principal vêm primeiro e destacados; os demais vêm depois
         const marcados = Object.keys(BLOCOS).filter(k => blocos.has(k));
@@ -411,6 +427,7 @@
               <div><span>Prazo</span><strong>${n.b.prazo} meses</strong></div>
               <div class="pf-plano-sim"><span>Sem entrada<br>Sem juros</span></div>
             </div>
+            <p class="pf-cenario">Cenário considerado: contemplação no mês <b>${n.e.mes}</b>, ${MOD_TXT[n.mod]}.</p>
           </div>
 
           ${ordem.length ? `<div class="pf-bloco">
@@ -444,6 +461,16 @@
           </footer>
           </div>`;
       };
+      el.querySelectorAll("[data-p-mod]").forEach(b => b.addEventListener("click", () => {
+        modProp = b.dataset.pMod;
+        ctx.estado.modalidade = modProp === "embutido" ? "embutido" : "sorteio";
+        ctx.mudou();
+      }));
+      el.querySelector("[data-p-mes]").addEventListener("change", ev => {
+        const v = Math.round(+ev.target.value);
+        if (v >= 1) ctx.estado.mes = Math.min(v, ctx.estado.prazo - 1);
+        ctx.mudou();
+      });
       el.querySelector("[data-cliente]").addEventListener("input", ev => { ctx.definirCliente(ev.target.value); montar(); });
       el.querySelectorAll("[data-pilar-p]").forEach(bt => bt.addEventListener("click", () => {
         pilar = bt.dataset.pilarP; blocos.clear(); SUGESTAO[pilar].forEach(k => blocos.add(k)); sincronizar(); montar();

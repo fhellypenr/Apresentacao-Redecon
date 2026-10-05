@@ -1041,3 +1041,18 @@ p, li, h1, h2, h3, h4, span, small, strong, label, dd, dt { text-wrap: pretty; }
 .pf-op-frase span { display: block; text-wrap: balance; }
 .pf-op-frase span:first-child { font-weight: 700; color: #101F3D; }
 .pf-op-num { text-wrap: balance; }
+
+/* Proposta: cenário de contemplação e fluxo do aluguel */
+.prop-cenario { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+.prop-mes { display: grid; gap: 4px; font-size: .85em; color: var(--texto-suave); }
+.prop-mes input { width: 5.5em; font: inherit; color: var(--texto); background: var(--azul-900); border: 1px solid var(--linha); border-radius: 8px; padding: 7px 10px; }
+.prop-cenario .seg button { font-size: .85em; }
+.pf-cenario { margin: 6px 0 0; font-size: .74em; color: #5A6B8C; }
+.pf-cenario b { color: #101F3D; }
+.pf-fluxo { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 6px; text-align: center; }
+.pf-fluxo > div { display: grid; justify-items: center; gap: 1px; }
+.pf-fluxo .ico { width: 30px; stroke: #8EA0C4; }
+.pf-fluxo .ok .ico { stroke: #F84434; }
+.pf-fluxo strong { font-size: .78em; color: #101F3D; }
+.pf-fluxo span { font-size: .66em; color: #5A6B8C; }
+.pf-fluxo > i { font-style: normal; color: #F84434; font-weight: 700; }

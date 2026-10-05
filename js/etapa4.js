@@ -434,7 +434,7 @@
           <div class="pf-bloco pf-comp">
             <div class="pf-comp-cli"><span>${ctx.T("compromisso_cliente_rotulo")}</span><strong>${ctx.T("compromisso_cliente")}</strong></div>
             <div class="pf-comp-red"><span>${ctx.T("compromisso_redecon_rotulo")}</span><ul>${itensRedecon.map(i => `<li>${i}</li>`).join("")}</ul></div>
-            <div class="pf-indica pf-indica-mini"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div>
+            <div class="pf-indica pf-indica-mini"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar + (n.b.meia ? "" : "_cheia"))}</p></div>
           </div>
           </div>
           <div class="pf-fim">

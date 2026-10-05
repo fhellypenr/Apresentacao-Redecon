@@ -530,17 +530,35 @@
         <dt>Selic</dt><dd>${fmtPct(p.selic, 2)} (Banco Central)</dd>
         <dt>Crédito rendendo</dt><dd>${fmtPct(p.rend_credito_am, 2)} ao mês</dd>
         <dt>Reajuste</dt><dd>${fmtPct(p.reajuste_aa, 1)} ao ano</dd>
+        <dt>Versão</dt><dd>${esc(CONFIG.versao)}</dd>
       </dl>
       ${Dados.erro && Dados.origem !== "planilha" ? `<p>Não foi possível ler a planilha: ${esc(Dados.erro)}.</p>` : ""}`;
   }
 
   // ---------- Início ----------
+  // Se o site foi atualizado e o navegador ainda guarda a versão antiga, recarrega sozinho na versão nova
+  async function conferirVersao() {
+    const hash0 = location.hash;
+    try {
+      const r = await fetch("versao.json?t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return;
+      const nova = (await r.json()).versao;
+      if (!nova || nova === CONFIG.versao) return;
+      const chave = "redecon_recarregou_" + nova;
+      if (sessionStorage.getItem(chave)) return; // evita ficar recarregando sem parar
+      sessionStorage.setItem(chave, "1");
+      location.replace(location.pathname + "?v=" + encodeURIComponent(nova) + hash0);
+    } catch (e) {}
+  }
+
   async function iniciar() {
+    const hashInicial = location.hash.slice(1); // guardado antes da montagem, que reescreve o endereço
+    conferirVersao();
     D = await Dados.carregar();
     iniciarFundo();
     montarAjustes();
     montar();
-    const pelaUrl = LISTA.findIndex(t => t.id === location.hash.slice(1));
+    const pelaUrl = LISTA.findIndex(t => t.id === hashInicial);
     if (pelaUrl >= 0) ir(pelaUrl, true);
     mostrarStatus();
 

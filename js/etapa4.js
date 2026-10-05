@@ -304,7 +304,7 @@
       <div class="pf-mc-col"><i class="${k === 0 ? "neutra" : ""}" style="height:${(30 + (i.v - min) / ((max - min) || 1) * 70).toFixed(0)}%"></i><span>${i.r}</span></div>`).join("")}
       <svg class="pf-mc-seta" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M4 34 L96 6"/><path d="M84 5 L96 6 L91 17"/></svg></div>`;
   };
-  const MOD_TXT = { sorteio: "por sorteio", embutido: "por lance embutido", ambos: "por sorteio ou lance" };
+  const MOD_TXT = { sorteio: "por sorteio", embutido: "por lance embutido" };
   // Conteúdo de cada opção: frase curta, ilustração e uma linha pequena de números
   function bloco(k, n, ctx) {
     const f = v => ctx.fmtReal(v, 2), mes = n.e.mes, cen = `no mês ${mes} ${MOD_TXT[n.mod]}`;
@@ -354,7 +354,7 @@
   // Premissas da folha: só as que valem para os blocos escolhidos
   function premissas(n, marcados, ctx) {
     const tem = k => marcados.includes(k), pct = ctx.fmtPct;
-    const l = [`contemplação considerada no mês ${n.e.mes}, ${MOD_TXT[n.mod]}${n.mod === "ambos" ? " (valores calculados pelo sorteio; com lance embutido, o crédito disponível é menor)" : ""}`,
+    const l = [`contemplação considerada no mês ${n.e.mes}, ${MOD_TXT[n.mod]}`,
       `reajuste anual de ${pct(n.b.reajuste)}`];
     if (tem("comparativo")) l.push(`financiamento ${n.sistema} a ${pct(n.p.fin_taxa_aa, 2)} ao ano + TR, com ${pct(n.p.fin_entrada)} de entrada e ${n.p.fin_prazo} meses; à vista, valor aplicado em CDB líquido de IR`);
     if (tem("rendendo")) l.push(`rendimento sobre o crédito total, e não apenas sobre o que foi pago`);
@@ -374,7 +374,7 @@
           <p class="prop-rotulo">Cenário de contemplação</p>
           <div class="prop-cenario">
             <label class="prop-mes"><span>Mês</span><input data-p-mes type="number" min="1" value="${ctx.estado.mes}"></label>
-            <div class="seg" role="group"><button data-p-mod="sorteio">Sorteio</button><button data-p-mod="embutido">Lance</button><button data-p-mod="ambos">Os dois</button></div>
+            <div class="seg" role="group"><button data-p-mod="sorteio">Sorteio</button><button data-p-mod="embutido">Lance embutido</button></div>
           </div>
           <p class="prop-rotulo">Blocos da proposta</p>
           <div class="prop-blocos">${Object.entries(PILAR).map(([pk, p]) => `
@@ -391,7 +391,7 @@
       let pilar = "aquisicao", estrategia = true, modProp = ctx.estado.modalidade;
       const blocos = new Set(SUGESTAO.aquisicao);
       const sincronizar = () => {
-        if (modProp !== "ambos") modProp = ctx.estado.modalidade;
+        modProp = ctx.estado.modalidade;
         el.querySelectorAll("[data-p-mod]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pMod === modProp)));
         const im = el.querySelector("[data-p-mes]");
         if (document.activeElement !== im) { im.value = ctx.estado.mes; im.max = ctx.estado.prazo - 1; }
@@ -401,7 +401,7 @@
       const montar = () => {
         if (!el.isConnected) { document.removeEventListener("redecon:estado", montar); return; }
         sincronizar();
-        const n = numerosProposta(ctx, modProp === "ambos" ? "ambos" : ctx.estado.modalidade), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
+        const n = numerosProposta(ctx, ctx.estado.modalidade), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
         const P = PILAR[pilar];
         // Foco: todos os blocos marcados do pilar principal vêm primeiro e destacados; os demais vêm depois
         const marcados = Object.keys(BLOCOS).filter(k => blocos.has(k));
@@ -463,7 +463,7 @@
       };
       el.querySelectorAll("[data-p-mod]").forEach(b => b.addEventListener("click", () => {
         modProp = b.dataset.pMod;
-        ctx.estado.modalidade = modProp === "embutido" ? "embutido" : "sorteio";
+        ctx.estado.modalidade = modProp;
         ctx.mudou();
       }));
       el.querySelector("[data-p-mes]").addEventListener("change", ev => {

@@ -58,7 +58,8 @@ window.DADOS_PADRAO = {
   },
   casos: [],
   textos: {
-    prop_ind_aquisicao: "A Redecon indica a meia parcela com foco nas fidelidades: você chega ao imóvel sem entrada, sem juros e sem se descapitalizar.",
+    virada_botao: "Conhecer o consórcio de hoje",
+    prop_ind_aquisicao: "A Redecon indica a meia parcela: você não se descapitaliza, paga o mínimo possível antes de contemplar e foca nas fidelidades para chegar à contemplação.",
     prop_ind_poupanca: "A Redecon indica a disciplina da parcela em dia: o crédito é reajustado todo ano e as fidelidades vão sendo liberadas.",
     prop_ind_investimento: "A Redecon indica contemplar e escolher o melhor caminho para o crédito: deixá-lo rendendo, vender a carta ou investir em um imóvel para renda.",
     prop_ind_comprar: "A Redecon indica a meia parcela com foco nas fidelidades: você chega ao imóvel sem entrada, sem juros e sem se descapitalizar.",
@@ -88,7 +89,7 @@ window.DADOS_PADRAO = {
     hs_titulo: "HS Consórcios no Brasil",
     virada_titulo: "Do consórcio tradicional à inteligência financeira",
     virada_antes_t: "O consórcio do passado",
-    virada_antes: "Casa, carro e moto: entrar no grupo, esperar a sorte e usar o crédito. Esse modelo ficou para trás.",
+    virada_antes: "Casa, carro e moto: só mais uma forma de comprar, uma alternativa ao financiamento. Entrar no grupo, esperar a sorte e usar o crédito.",
     virada_depois_t: "O consórcio de hoje",
     virada_depois: "Com a meia parcela, o consórcio vira ativo financeiro: o crédito cresce, rende e pode ser usado, vendido ou transformado em renda.",
     virada_frase: "De bem de consumo a ativo financeiro.",

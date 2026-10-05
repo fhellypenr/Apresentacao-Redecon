@@ -440,7 +440,8 @@
   }
   // Números grandes sobem de zero até o valor (ex.: "+3.200", "+R$ 27 bi")
   function contarNumeros(el) {
-    $$(".stat strong, .economia strong", el).forEach(n => {
+    $$(".stat strong, .economia strong, .destaque-fim strong, .num.grande .num-valor, .num.positivo .num-valor, .pf-grande", el).forEach(n => {
+      if (n.closest(".prop-folha")) return;
       const orig = n.dataset.orig || n.textContent;
       n.dataset.orig = orig;
       const m = orig.match(/\d[\d.]*(,\d+)?/);
@@ -456,6 +457,13 @@
       };
       requestAnimationFrame(passo);
     });
+  }
+
+  // Avançar: algumas telas têm etapas internas antes de passar para a próxima
+  function avancar() {
+    const el = $(`.slide[data-i="${atual}"]`);
+    if (el && el._avancar && el._avancar()) return;
+    ir(atual + 1);
   }
 
   function ir(i, inicial) {
@@ -530,7 +538,7 @@
     mostrarStatus();
 
     $("#bt-ant").addEventListener("click", () => ir(atual - 1));
-    $("#bt-prox").addEventListener("click", () => ir(atual + 1));
+    $("#bt-prox").addEventListener("click", avancar);
     $("#bt-menu").addEventListener("click", () => abrir("#menu"));
     $("#bt-ajustes").addEventListener("click", () => abrir("#ajustes"));
     $$(".painel-fechar").forEach(b => b.addEventListener("click", fecharPaineis));
@@ -547,7 +555,7 @@
     window.addEventListener("resize", () => { clearTimeout(tRes); tRes = setTimeout(() => ctx.mudou(), 250); });
     document.addEventListener("keydown", e => {
       if (e.target.closest("input, select, textarea, .graf")) return;
-      if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); ir(atual + 1); }
+      if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); avancar(); }
       if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); ir(atual - 1); }
       if (e.key === "Escape") fecharPaineis();
     });
@@ -560,7 +568,7 @@
     $(".palco").addEventListener("touchend", e => {
       if (x0 == null) return;
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) ir(atual + (dx < 0 ? 1 : -1));
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) avancar(); else ir(atual - 1); }
       x0 = null;
     });
   }

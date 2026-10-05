@@ -55,23 +55,35 @@
   // ---------- Virada de chave: o consórcio do passado × o de hoje ----------
   const virada = {
     id: "virada", nome: "Do tradicional à inteligência financeira",
+    // Etapa 1: só o consórcio do passado, que é riscado. Etapa 2 (botão ou "próxima"): o consórcio de hoje entra
+    // e o passado vai para o canto esquerdo, menor.
     html: ctx => `
       <h2 class="titulo">${ctx.T("virada_titulo")}</h2>
-      <div class="virada centro-vertical">
+      <div class="virada virada-etapa1 centro-vertical">
         <div class="virada-antes">
           <span class="carimbo" aria-hidden="true"></span>
           <h3>${ctx.T("virada_antes_t")}</h3>
           <div class="ccm"><span>Casa</span><span>Carro</span><span>Moto</span></div>
           <p>${ctx.T("virada_antes")}</p>
         </div>
+        <button class="btn btn-virada" data-acao="virada">${ctx.T("virada_botao")} <span aria-hidden="true">→</span></button>
         <div class="virada-seta" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 24h28M28 14l10 10-10 10"/></svg></div>
         <div class="virada-depois">
           <h3>${ctx.T("virada_depois_t")}</h3>
           <p class="virada-frase">${ctx.T("virada_frase")}</p>
-          <ul class="hoje">${lista(ctx.T("virada_usos")).map((u, i) => `<li>${icone(ICONES_HOJE[i] || "casa")}<span>${u}</span></li>`).join("")}</ul>
+          <ul class="hoje">${lista(ctx.T("virada_usos")).map((u, i) => `<li style="--k:${i}">${icone(ICONES_HOJE[i] || "casa")}<span>${u}</span></li>`).join("")}</ul>
         </div>
-      </div>`
+      </div>`,
+    iniciar: (el) => {
+      const caixa = el.querySelector(".virada");
+      const etapa2 = () => { caixa.classList.remove("virada-etapa1"); caixa.classList.add("virada-etapa2"); };
+      el.querySelector('[data-acao="virada"]').addEventListener("click", etapa2);
+      // "Próxima" na etapa 1 mostra o consórcio de hoje antes de trocar de tela
+      el._avancar = () => { if (caixa.classList.contains("virada-etapa1")) { etapa2(); return true; } return false; };
+      el._reiniciar = () => { caixa.classList.remove("virada-etapa2"); caixa.classList.add("virada-etapa1"); };
+    }
   };
+
 
   // ---------- Mapa do API ----------
   const mapa = {
@@ -257,7 +269,8 @@
     const s0 = H.cota(b, { modalidade: "nenhuma" });
     const credAno = anos => s0.meses[Math.min(anos * 12 + 1, b.prazo) - 1].creditoAtual;
     const f4 = (ctx.D.funil || []).slice().sort((x, y) => x.concorrencia - y.concorrencia)[0];
-    return { b, e, p, parc, c, cred, cmp, venda, cdb, alt, credAno, f4,
+    const rendeVista = b.credito * H.cdbLiquidoAm(b);
+    return { b, e, p, parc, c, cred, cmp, venda, cdb, alt, credAno, f4, rendeVista,
       rende1: cred * b.rendAm, parcPos: sc.parcelaPosInicial,
       alug: cred * p.aluguel_am, altV: alt ? cred * alt.taxa_am : 0, sistema: e.sistema || "Price" };
   }
@@ -273,7 +286,7 @@
       case "comparativo": return {
         contexto: `Imóvel de ${f(n.b.credito)}, com reajustes e contemplação no mês ${mes}`, grafTit: "Total pago pelo mesmo imóvel",
         destaque: f(n.cmp.economia), dLeg: "a menos que no financiamento",
-        pares: [[`Financiamento (${n.sistema}) — total pago`, f(n.cmp.fin.totalPago)], ["Consórcio — total pago", f(n.cmp.total)], ["Entrada", "Sem entrada"]],
+        pares: [[`Financiamento (${n.sistema}), total pago`, f(n.cmp.fin.totalPago)], ["Consórcio, total pago", f(n.cmp.total)], ["À vista, deixaria de render", f(n.rendeVista) + "/mês"]],
         graf: barras([{ r: "Financiamento", v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", v: n.cmp.total }], f) };
       case "reajuste": return {
         contexto: `Enquanto aguarda a contemplação, o crédito sobe ${ctx.fmtPct(n.b.reajuste)} ao ano`, grafTit: "Crédito ao longo do tempo",
@@ -331,9 +344,7 @@
         const marcados = Object.keys(BLOCOS).filter(k => blocos.has(k));
         const focoK = marcados.find(k => BLOCOS[k].pilar === pilar) || null;
         const outros = marcados.filter(k => k !== focoK);
-        const foco = focoK ? bloco(focoK, n, ctx) : null;
         const fun = ctx.D.funil || [];
-        const cols = Math.min(4, Math.max(1, outros.length));
         el.querySelector('[data-alvo="folha"]').innerHTML = `
           <header class="pf-topo">
             <img src="img/logo-positivo.png" alt="Redecon Consórcios">
@@ -353,29 +364,23 @@
             </div>
           </div>
 
-          ${foco ? `<div class="pf-bloco">
-            <p class="pf-sec"><b>2</b> ${P.nome}: ${BLOCOS[focoK].nome.toLowerCase()}</p>
-            <section class="pf-foco">
-              <p class="pf-contexto pf-contexto-linha">${foco.contexto}</p>
-              <div class="pf-foco-grade">
-                <div>
-                  <strong class="pf-grande">${foco.destaque}</strong><span class="pf-legenda">${foco.dLeg}</span>
-                  <div class="pf-apoio">${foco.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
+          ${marcados.length ? `<div class="pf-bloco">
+            <p class="pf-sec"><b>2</b> O que o seu crédito pode fazer</p>
+            <div class="pf-cards">${[focoK, ...outros].filter(Boolean).map(k => {
+              const x = bloco(k, n, ctx), B = BLOCOS[k], ehFoco = k === focoK;
+              return `<section class="pf-card${ehFoco ? " foco" : ""}">
+                <header class="pf-card-topo">
+                  ${icone(B.ico)}<div class="pf-card-nome"><small>${PILAR[B.pilar].nome}${ehFoco ? " · foco do cliente" : ""}</small><strong>${B.nome}</strong></div>
+                  <p class="pf-card-ctx">${x.contexto}</p>
+                </header>
+                <div class="pf-card-grade">
+                  <div>
+                    <strong class="pf-grande">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span>
+                    <div class="pf-apoio">${x.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
+                  </div>
+                  <div class="pf-foco-dir"><p class="pf-graf-tit">${x.grafTit}</p>${x.graf}</div>
                 </div>
-                <div class="pf-foco-dir"><p class="pf-graf-tit">${foco.grafTit}</p>${foco.graf}</div>
-              </div>
-            </section>
-          </div>` : ""}
-
-          ${outros.length ? `<div class="pf-bloco">
-            <p class="pf-sec"><b>${foco ? 3 : 2}</b> Outros caminhos com o mesmo crédito</p>
-            <div class="pf-outros" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${outros.map(k => {
-              const x = bloco(k, n, ctx), B = BLOCOS[k];
-              return `<div class="pf-outro">
-                <div class="pf-outro-tit">${icone(B.ico)}<div><small>${PILAR[B.pilar].nome}</small><strong>${B.nome}</strong></div></div>
-                <p class="pf-contexto">${x.contexto}</p>
-                <strong class="pf-medio">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span>
-              </div>`; }).join("")}</div>
+              </section>`; }).join("")}</div>
           </div>` : ""}
 
           <div class="pf-bloco"><div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div></div>
@@ -404,6 +409,22 @@
         let caixa = document.getElementById("impressao");
         if (!caixa) { caixa = document.createElement("div"); caixa.id = "impressao"; document.body.appendChild(caixa); }
         caixa.innerHTML = `<div class="prop-folha">${el.querySelector('[data-alvo="folha"]').innerHTML}</div>`;
+        // Mede a folha na largura do A4 e ajusta para 1 ou 2 páginas inteiras (rodapé sempre no pé)
+        const folha = caixa.querySelector(".prop-folha");
+        // Mede a altura natural (mesmas regras da impressão); 1 página se couber, senão 2; se nem em 2, compacta a fonte
+        caixa.classList.remove("duas-paginas", "compacta");
+        caixa.classList.add("medindo");
+        const medir = () => folha.getBoundingClientRect().height * 25.4 / 96;
+        let mm = medir();
+        if (mm > 296) { caixa.classList.add("compacta"); mm = medir(); }          // tenta caber em 1 página
+        if (mm > 296) {                                                            // não coube: 2 páginas
+          caixa.classList.remove("compacta"); caixa.classList.add("duas-paginas"); mm = medir();
+          if (mm > 568) caixa.classList.add("compacta");
+        }
+        const duas = caixa.classList.contains("duas-paginas");
+        caixa.classList.remove("medindo");
+        // Em 2 páginas a margem interna se repete no topo da 2ª e no pé da 1ª (24mm a mais)
+        folha.style.minHeight = (duas ? 593 - 24 : 296.5) + "mm";
         const tituloAntes = document.title;
         document.title = "Proposta Redecon" + (ctx.ajustes.cliente ? " - " + ctx.ajustes.cliente : "");
         const img = caixa.querySelector("img");

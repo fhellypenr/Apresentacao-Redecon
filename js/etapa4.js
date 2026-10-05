@@ -221,6 +221,117 @@
   };
 
   // ---------- Encerramento ----------
+  // ---------- Proposta direcionada ----------
+  // O apresentador marca o objetivo e o que entra; a proposta se monta ao lado e vira PDF.
+  // Nada fica salvo: o PDF é gerado no próprio aparelho.
+  const OBJETIVOS = ["Comprar ou construir", "Fazer o crédito render", "Vender a carta contemplada", "Gerar renda com aluguel", "Poupar com disciplina"];
+  const ITENS = [
+    ["economia", "Economia em relação ao financiamento"],
+    ["estrategia", "Estratégia de contemplação"],
+    ["rende", "Crédito rendendo após contemplar"],
+    ["venda", "Venda da carta contemplada"],
+    ["aluguel", "Renda com aluguel"],
+    ["reajuste", "Crédito reajustado em 5 anos"]
+  ];
+  function validade(hoje = new Date()) {
+    const d = hoje.getDate(), m = hoje.getMonth(), a = hoje.getFullYear();
+    const alvo = d <= 10 ? new Date(a, m, 10) : d <= 25 ? new Date(a, m, 25) : new Date(a, m + 1, 10);
+    return alvo.toLocaleDateString("pt-BR");
+  }
+  const proposta = {
+    id: "proposta", nome: "Proposta direcionada",
+    html: ctx => `
+      <h2 class="titulo">${ctx.T("prop_titulo")}</h2>
+      <div class="prop">
+        <div class="prop-escolhas">
+          <p class="prop-rotulo">Objetivo do cliente</p>
+          <div class="prop-chips">${OBJETIVOS.map((o, i) => `<button class="chip-op" data-obj="${i}" aria-pressed="false">${o}</button>`).join("")}</div>
+          <p class="prop-rotulo">O que entra na proposta</p>
+          <div class="prop-itens">${ITENS.map(([k, n]) => `<label class="tela-op"><input type="checkbox" data-item="${k}"> ${n}</label>`).join("")}</div>
+          <p class="prop-nota">Crédito, parcela e mês de contemplação vêm de "O seu plano".</p>
+          <button class="btn btn-pdf" data-acao="pdf">Gerar PDF da proposta</button>
+        </div>
+        <div class="prop-folha-caixa"><div class="prop-folha" data-alvo="folha"></div></div>
+      </div>`,
+    iniciar: (el, ctx) => {
+      const H = A(), objs = new Set(), itens = new Set(["economia", "estrategia"]);
+      el.querySelectorAll("[data-item]").forEach(c => { c.checked = itens.has(c.dataset.item); });
+      const montar = () => {
+        if (!el.isConnected) { document.removeEventListener("redecon:estado", montar); return; }
+        const e = ctx.estado, f = ctx.fmtReal, b = H.base(ctx), p = b.p, aj = ctx.ajustes, ii = k => inst(ctx, k);
+        const parc = Motor.parcela({ credito: b.credito, prazo: b.prazo, taxaTotal: b.taxaTotal, meia: b.meia });
+        const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
+        const c = sc.contemplacao;
+        const linhas = [];
+        if (itens.has("economia")) {
+          const r = H.compararFinanciamento(b, { mes: e.mes, comReaj: true, sistema: e.sistema || "Price" });
+          if (r.economia > 0) linhas.push(["Economia em relação ao financiamento",
+            `Comparado a um financiamento ${e.sistema || "Price"} do mesmo valor, a simulação indica <strong>${f(r.economia)}</strong> a menos em custo total, já considerando os reajustes e sem entrada.`]);
+        }
+        if (itens.has("estrategia")) {
+          const f4 = (ctx.D.funil || []).slice().sort((x, y) => x.concorrencia - y.concorrencia)[0];
+          linhas.push(["Estratégia de contemplação",
+            `Parcelas pagas em dia liberam as modalidades de fidelidade${f4 ? `; a ${ctx.esc(f4.modalidade)} libera com ${f4.meses} parcelas seguidas em dia (concorrência média histórica de ${ctx.fmtPct(f4.concorrencia)})` : ""}. Lance embutido de até ${ctx.fmtPct(p.lance_embutido)} do crédito, sem tirar dinheiro do bolso.`]);
+        }
+        if (itens.has("rende")) linhas.push(["Crédito rendendo",
+          `Se contemplado no mês ${e.mes}, o crédito aplicado renderia cerca de <strong>${f(c.creditoDisponivel * b.rendAm)}</strong> no primeiro mês, sobre o valor total.`]);
+        if (itens.has("venda")) {
+          const v = Motor.vendaCarta({ creditoDisponivel: c.creditoDisponivel, pagoAteContemplar: c.pagoTotal, agio: e.agio });
+          linhas.push(["Venda da carta contemplada",
+            `Se contemplado no mês ${e.mes}, a carta poderia ser negociada por cerca de <strong>${f(v.recebe)}</strong> (ágio de referência de ${ctx.fmtPct(e.agio)}).`]);
+        }
+        if (itens.has("aluguel")) {
+          const alt = (ctx.D.alternativas && ctx.D.alternativas[0]) || (DADOS_PADRAO.alternativas || [])[0];
+          linhas.push(["Renda com aluguel",
+            `Com o crédito em um imóvel, o aluguel tradicional estimado é de <strong>${f(c.creditoDisponivel * p.aluguel_am)}</strong> por mês${alt ? `; em ${ctx.esc(alt.nome).toLowerCase()}, cerca de <strong>${f(c.creditoDisponivel * alt.taxa_am)}</strong> por mês` : ""}.`]);
+        }
+        if (itens.has("reajuste")) {
+          const s0 = H.cota(b, { modalidade: "nenhuma" }), m5 = Math.min(61, b.prazo);
+          linhas.push(["Crédito reajustado",
+            `Com o reajuste anual de ${ctx.fmtPct(b.reajuste)}, o crédito chegaria a <strong>${f(s0.meses[m5 - 1].creditoAtual)}</strong> em ${Math.floor((m5 - 1) / 12)} anos, enquanto aguarda a contemplação.`]);
+        }
+        const hoje = new Date().toLocaleDateString("pt-BR");
+        el.querySelector('[data-alvo="folha"]').innerHTML = `
+          <header class="pf-topo">
+            <img src="img/logo-positivo.png" alt="Redecon Consórcios">
+            <div><strong>${ctx.T("prop_titulo")}</strong><span>${hoje}${aj.apresentador ? " · " + ctx.esc(aj.apresentador) : ""}</span></div>
+          </header>
+          <p class="pf-cliente">${aj.cliente ? "Preparada para <strong>" + ctx.esc(aj.cliente) + "</strong>" : "Preparada para você"}</p>
+          <div class="pf-plano">
+            <div><span>Crédito</span><strong>${f(b.credito)}</strong></div>
+            <div><span>${b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(parc, 2)}</strong></div>
+          </div>
+          <p class="pf-selo">Sem entrada · sem juros</p>
+          ${objs.size ? `<p class="pf-sec">Seu objetivo</p><p class="pf-obj">${[...objs].sort().map(i => OBJETIVOS[i]).join(" · ")}</p>` : ""}
+          ${linhas.length ? `<p class="pf-sec">O que esse plano pode fazer por você</p>${linhas.map(([t, x]) => `<div class="pf-item"><strong>${t}</strong><p>${x}</p></div>`).join("")}` : ""}
+          <div class="pf-prox"><strong>${ctx.T("fech_proximo_t")}</strong> ${ctx.T("fech_proximo")}</div>
+          <p class="pf-aviso">${ctx.T("prop_aviso")}</p>
+          <footer class="pf-rodape">
+            <span>Proposta válida até <strong>${validade()}</strong></span>
+            <span>${ii("ct_telefone")} · ${ii("ct_instagram")} · ${ii("ct_site")}</span>
+          </footer>`;
+      };
+      el.querySelectorAll("[data-obj]").forEach(bt => bt.addEventListener("click", () => {
+        const i = +bt.dataset.obj; objs.has(i) ? objs.delete(i) : objs.add(i);
+        bt.setAttribute("aria-pressed", String(objs.has(i))); montar();
+      }));
+      el.querySelectorAll("[data-item]").forEach(c => c.addEventListener("change", () => { c.checked ? itens.add(c.dataset.item) : itens.delete(c.dataset.item); montar(); }));
+      el.querySelector('[data-acao="pdf"]').addEventListener("click", () => {
+        let caixa = document.getElementById("impressao");
+        if (!caixa) { caixa = document.createElement("div"); caixa.id = "impressao"; document.body.appendChild(caixa); }
+        caixa.innerHTML = `<div class="prop-folha">${el.querySelector('[data-alvo="folha"]').innerHTML}</div>`;
+        const tituloAntes = document.title;
+        document.title = "Proposta Redecon" + (ctx.ajustes.cliente ? " - " + ctx.ajustes.cliente : "");
+        const img = caixa.querySelector("img");
+        const imprimir = () => { window.print(); document.title = tituloAntes; };
+        img && !img.complete ? img.addEventListener("load", imprimir, { once: true }) : imprimir();
+      });
+      document.addEventListener("redecon:estado", montar);
+      el._aoMostrar = montar;
+      montar();
+    }
+  };
+
   const encerramento = {
     id: "encerramento", nome: "Obrigado", classe: "fim-slide",
     html: ctx => {
@@ -249,5 +360,5 @@
     }
   };
 
-  window.ETAPA4 = { quemRedecon, quemHs, virada, mapa, sintese, casos, fechamento, encerramento };
+  window.ETAPA4 = { quemRedecon, quemHs, virada, mapa, sintese, casos, fechamento, proposta, encerramento };
 })();

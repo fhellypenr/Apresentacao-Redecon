@@ -213,7 +213,7 @@
       ] },
       { nome: "Segurança, liberdade e rendimento", telas: [E.sintese].filter(Boolean).map(comCtx) },
       { nome: "Casos reais", telas: casosOk && E.casos ? [comCtx(E.casos)] : [], semCasos: !casosOk },
-      { nome: "Fechamento", telas: [E.fechamento].filter(Boolean).map(comCtx) },
+      { nome: "Fechamento", telas: [E.fechamento, E.proposta].filter(Boolean).map(comCtx) },
       { nome: "Encerramento", telas: [E.encerramento].filter(Boolean).map(comCtx) }
     ];
   }

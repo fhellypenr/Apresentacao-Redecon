@@ -4,5 +4,5 @@ window.CONFIG = {
   planilhaId: "1SLAOV6B6YGJMJnUob3XUiJbF8xHY3BQoDezQ47i1YIo",
   abas: ["Parametros", "Indices", "Prazos", "Funil", "IR", "Institucional", "Textos"],
   apresentadores: ["Fhellype", "Roger", "Sérgio Júnior"],
-  versao: "0.4.0"
+  versao: "0.4.1"
 };

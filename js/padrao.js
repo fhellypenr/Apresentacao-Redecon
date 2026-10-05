@@ -58,6 +58,8 @@ window.DADOS_PADRAO = {
   },
   casos: [],
   textos: {
+    prop_titulo: "Proposta direcionada",
+    prop_aviso: "Simulação estimada, com base nas premissas atuais. Os valores podem variar. A contemplação ocorre por sorteio ou lance e não é garantida; esta proposta não representa promessa de contemplação nem de rentabilidade.",
     sint_ren_frase: "Rende sobre o crédito, não sobre o que você pagou.",
     sint_ren_t: "Rendimento",
     sint_liq_frase: "Contemplou? Você decide o caminho.",

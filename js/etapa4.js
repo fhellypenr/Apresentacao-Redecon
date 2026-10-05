@@ -222,22 +222,27 @@
 
   // ---------- Encerramento ----------
   // ---------- Proposta direcionada ----------
-  // Um objetivo principal define o foco (números grandes + gráfico); os demais entram como "também possível".
-  // Nada fica salvo: o PDF é gerado no próprio aparelho.
-  const OBJ = [
-    { k: "comprar", nome: "Comprar ou construir", ico: "casa" },
-    { k: "quitar", nome: "Quitar financiamento", ico: "escudo" },
-    { k: "render", nome: "Fazer o crédito render", ico: "rende" },
-    { k: "vender", nome: "Vender a carta", ico: "venda" },
-    { k: "aluguel", nome: "Renda com aluguel", ico: "aluguel" },
-    { k: "poupar", nome: "Poupar com disciplina", ico: "grafico" }
-  ];
+  // Linha de raciocínio da folha: 1) o plano  2) o foco (pilar principal do API, com o "de onde vem" de cada número)
+  // 3) outros caminhos com o mesmo crédito  4) indicação Redecon  5) como chegar lá  6) premissas e validade.
+  const PILAR = {
+    aquisicao: { nome: "Aquisição", ico: "casa", blocos: ["comparativo"] },
+    poupanca: { nome: "Poupança", ico: "grafico", blocos: ["reajuste"] },
+    investimento: { nome: "Investimento", ico: "rende", blocos: ["rendendo", "venda", "aluguel"] }
+  };
+  const BLOCOS = {
+    comparativo: { pilar: "aquisicao", nome: "Consórcio × financiamento", ico: "casa" },
+    reajuste: { pilar: "poupanca", nome: "Crédito que cresce", ico: "grafico" },
+    rendendo: { pilar: "investimento", nome: "Crédito rendendo", ico: "rende" },
+    venda: { pilar: "investimento", nome: "Venda da carta", ico: "venda" },
+    aluguel: { pilar: "investimento", nome: "Renda com aluguel", ico: "aluguel" }
+  };
+  // Sugestão inicial de blocos para cada pilar principal (o apresentador ajusta)
+  const SUGESTAO = { aquisicao: ["comparativo", "reajuste"], poupanca: ["reajuste", "rendendo"], investimento: ["rendendo", "venda", "aluguel"] };
   function validade(hoje = new Date()) {
     const d = hoje.getDate(), m = hoje.getMonth(), a = hoje.getFullYear();
     const alvo = d <= 10 ? new Date(a, m, 10) : d <= 25 ? new Date(a, m, 25) : new Date(a, m + 1, 10);
     return alvo.toLocaleDateString("pt-BR");
   }
-  // Todos os números da proposta, a partir do plano ("O seu plano")
   function numerosProposta(ctx) {
     const H = A(), e = ctx.estado, b = H.base(ctx), p = b.p;
     const parc = Motor.parcela({ credito: b.credito, prazo: b.prazo, taxaTotal: b.taxaTotal, meia: b.meia });
@@ -252,132 +257,136 @@
     const s0 = H.cota(b, { modalidade: "nenhuma" });
     const credAno = anos => s0.meses[Math.min(anos * 12 + 1, b.prazo) - 1].creditoAtual;
     const f4 = (ctx.D.funil || []).slice().sort((x, y) => x.concorrencia - y.concorrencia)[0];
-    return { b, e, p, parc, sc, c, cred, cmp, venda, cdb, alt, credAno, f4,
-      rende1: cred * b.rendAm, parcPos: sc.parcelaPosInicial, fimGrupo: sc.meses[sc.meses.length - 1].creditoDisponivel,
+    return { b, e, p, parc, c, cred, cmp, venda, cdb, alt, credAno, f4,
+      rende1: cred * b.rendAm, parcPos: sc.parcelaPosInicial,
       alug: cred * p.aluguel_am, altV: alt ? cred * alt.taxa_am : 0, sistema: e.sistema || "Price" };
   }
-  // Barras horizontais simples (funcionam na tela e no PDF)
   const barras = (itens, f) => {
     const max = Math.max(...itens.map(i => Math.abs(i.v)), 1);
     return `<div class="pf-barras">${itens.map(i => `
       <div class="pf-barra"><span>${i.r}</span><div class="pf-trilho"><i class="${i.cls || ""}" style="width:${Math.max(3, Math.abs(i.v) / max * 100).toFixed(1)}%"></i></div><strong>${f(i.v)}</strong></div>`).join("")}</div>`;
   };
-  // Foco de cada objetivo: destaque principal, apoio e gráfico
-  function focoProposta(k, n, ctx) {
-    const f = ctx.fmtReal, mc = `contemplado no mês ${n.e.mes}`;
+  // Conteúdo de cada bloco: contexto (de onde vem o número), destaque, pares e gráfico
+  function bloco(k, n, ctx) {
+    const f = ctx.fmtReal, mes = n.e.mes;
     switch (k) {
-      case "comprar": case "quitar": return {
-        grande: f(n.cmp.economia), legenda: k === "quitar" ? "a menos que manter um financiamento do mesmo valor" : "a menos que financiar o mesmo valor",
-        apoio: [["Entrada", "Sem entrada"], ["Juros", "Sem juros"], ["Entrada do financiamento", f(n.cmp.fin.valorEntrada)]],
-        graf: barras([{ r: "Financiamento", v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", v: n.cmp.total }], f),
-        nota: `Total pago no fim, já com reajustes, ${mc}.` };
-      case "render": return {
-        grande: f(n.rende1), legenda: `de rendimento no 1º mês, ${mc}`,
-        apoio: [["Crédito aplicado", f(n.cred)], ["Parcela depois", f(n.parcPos)], ["No fim do grupo", f(n.fimGrupo)]],
-        graf: barras([{ r: "Rendimento", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }], f),
-        nota: "O rendimento é sobre o crédito total, não sobre o valor pago." };
-      case "vender": return {
-        grande: f(n.venda.recebe), legenda: `valor de venda da carta, ${mc}`,
-        apoio: [["Você pagou", f(n.c.pagoTotal)], ["Lucro na venda", f(n.venda.lucro)], ["Mesmas parcelas no CDB", f(n.cdb.ganho)]],
-        graf: barras([{ r: "Lucro na venda", v: n.venda.lucro }, { r: "Ganho no CDB", v: n.cdb.ganho, cls: "neutra" }], f),
-        nota: `Ágio de referência de ${ctx.fmtPct(n.e.agio)} sobre o crédito.` };
-      case "aluguel": return {
-        grande: f(Math.max(n.alug, n.altV)), legenda: `por mês de aluguel estimado${n.altV > n.alug && n.alt ? " (" + ctx.esc(n.alt.nome).toLowerCase() + ")" : ""}`,
-        apoio: [["Aluguel tradicional", f(n.alug)], [n.alt ? ctx.esc(n.alt.nome) : "Fora do tradicional", f(n.altV)], ["Parcela depois", f(n.parcPos)]],
-        graf: barras([{ r: "Tradicional", v: n.alug }, ...(n.alt ? [{ r: ctx.esc(n.alt.nome), v: n.altV }] : []), { r: "Parcela", v: n.parcPos, cls: "neutra" }], f),
-        nota: `Imóvel de ${f(n.cred)}, ${mc}.` };
+      case "comparativo": return {
+        contexto: `Para um imóvel de ${f(n.b.credito)}, com os reajustes e contemplação no mês ${mes}:`,
+        destaque: f(n.cmp.economia), dLeg: "a menos que no financiamento",
+        pares: [[`Financiamento (${n.sistema}) — total pago`, f(n.cmp.fin.totalPago)], ["Consórcio — total pago", f(n.cmp.total)], ["Entrada", "Sem entrada"]],
+        graf: barras([{ r: "Financiamento", v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", v: n.cmp.total }], f) };
+      case "reajuste": return {
+        contexto: `Enquanto aguarda a contemplação, o crédito é reajustado ${ctx.fmtPct(n.b.reajuste)} ao ano:`,
+        destaque: f(n.credAno(5)), dLeg: "de crédito em 5 anos",
+        pares: [["Crédito hoje", f(n.b.credito)], ["Em 5 anos", f(n.credAno(5))], ["Em 10 anos", f(n.credAno(10))]],
+        graf: barras([{ r: "Hoje", v: n.b.credito, cls: "neutra" }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }], f) };
+      case "rendendo": return {
+        contexto: `Contemplado no mês ${mes}, o crédito de ${f(n.cred)} fica aplicado:`,
+        destaque: f(n.rende1), dLeg: "de rendimento no 1º mês",
+        pares: [["Crédito aplicado", f(n.cred)], ["Rendimento no 1º mês", f(n.rende1)], ["Parcela depois de contemplar", f(n.parcPos)]],
+        graf: barras([{ r: "Rendimento", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }], f) };
+      case "venda": return {
+        contexto: `Contemplado no mês ${mes}, tendo pago ${f(n.c.pagoTotal)}:`,
+        destaque: f(n.venda.recebe), dLeg: `valor de venda da carta (ágio de ${ctx.fmtPct(n.e.agio)})`,
+        pares: [["Total pago até a contemplação", f(n.c.pagoTotal)], ["Valor de venda", f(n.venda.recebe)], ["Lucro na venda", f(n.venda.lucro)]],
+        graf: barras([{ r: "Lucro na venda", v: n.venda.lucro }, { r: "Mesmas parcelas no CDB", v: n.cdb.ganho, cls: "neutra" }], f) };
       default: return {
-        grande: f(n.credAno(5)), legenda: "de crédito em 5 anos, com o reajuste anual",
-        apoio: [["Crédito hoje", f(n.b.credito)], ["Em 5 anos", f(n.credAno(5))], ["Em 10 anos", f(n.credAno(10))]],
-        graf: barras([{ r: "Hoje", v: n.b.credito, cls: "neutra" }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }], f),
-        nota: `Reajuste de ${ctx.fmtPct(n.b.reajuste)} ao ano enquanto aguarda a contemplação.` };
+        contexto: `Com o crédito de ${f(n.cred)} investido em um imóvel:`,
+        destaque: f(Math.max(n.alug, n.altV)) + "/mês", dLeg: "de aluguel estimado",
+        pares: [["Aluguel tradicional", f(n.alug) + "/mês"], ...(n.alt ? [[ctx.esc(n.alt.nome), f(n.altV) + "/mês"]] : []), ["Parcela depois de contemplar", f(n.parcPos)]],
+        graf: barras([{ r: "Tradicional", v: n.alug }, ...(n.alt ? [{ r: ctx.esc(n.alt.nome), v: n.altV }] : []), { r: "Parcela", v: n.parcPos, cls: "neutra" }], f) };
     }
   }
-  // Um número por objetivo, para os quadros "também possível"
-  const extraProposta = (k, n, ctx) => {
-    const f = ctx.fmtReal;
-    return ({
-      comprar: ["Economia vs. financiamento", f(n.cmp.economia)],
-      quitar: ["Economia vs. financiamento", f(n.cmp.economia)],
-      render: ["Rende no 1º mês", f(n.rende1)],
-      vender: ["Venda da carta", f(n.venda.recebe)],
-      aluguel: ["Aluguel estimado", f(Math.max(n.alug, n.altV)) + "/mês"],
-      poupar: ["Crédito em 5 anos", f(n.credAno(5))]
-    })[k];
-  };
   const proposta = {
     id: "proposta", nome: "Proposta direcionada",
     html: ctx => `
       <h2 class="titulo">${ctx.T("prop_titulo")}</h2>
       <div class="prop">
         <div class="prop-escolhas">
-          <p class="prop-rotulo">Objetivo principal</p>
-          <div class="prop-chips">${OBJ.map(o => `<button class="chip-op" data-obj="${o.k}" aria-pressed="false">${o.nome}</button>`).join("")}</div>
-          <p class="prop-rotulo">Também mostrar</p>
-          <div class="prop-chips" data-alvo="extras"></div>
-          <label class="tela-op"><input type="checkbox" data-estrategia checked> Estratégia de contemplação</label>
-          <p class="prop-nota">Crédito, parcela e mês de contemplação vêm de "O seu plano".</p>
+          <label class="prop-nome"><span class="prop-rotulo">Nome do cliente</span><input data-cliente type="text" autocomplete="off" placeholder="Digite o nome" value="${ctx.esc(ctx.ajustes.cliente || "")}"></label>
+          <p class="prop-rotulo">Foco do cliente (Método API)</p>
+          <div class="prop-chips">${Object.entries(PILAR).map(([k, p]) => `<button class="chip-op" data-pilar-p="${k}" aria-pressed="false">${p.nome}</button>`).join("")}</div>
+          <p class="prop-rotulo">Blocos da proposta</p>
+          <div class="prop-blocos">${Object.entries(PILAR).map(([pk, p]) => `
+            <div class="prop-grupo"><span>${p.nome}</span>${p.blocos.map(k => `<label class="tela-op"><input type="checkbox" data-bloco="${k}"> ${BLOCOS[k].nome}</label>`).join("")}</div>`).join("")}
+            <div class="prop-grupo"><span>Contemplação</span><label class="tela-op"><input type="checkbox" data-estrategia checked> Como chegar lá (fidelidades)</label></div>
+          </div>
+          <p class="prop-nota">Crédito, parcela e mês de contemplação vêm de "O seu plano". A data e a validade entram sozinhas.</p>
           <button class="btn btn-pdf" data-acao="pdf">Gerar PDF da proposta</button>
         </div>
         <div class="prop-folha-caixa"><div class="prop-folha" data-alvo="folha"></div></div>
       </div>`,
     iniciar: (el, ctx) => {
-      // Para cada objetivo, o que costuma entrar como "plus" (o apresentador ajusta)
-      const PLUS = { comprar: ["render", "vender", "poupar"], quitar: ["render", "poupar"], render: ["vender", "aluguel"],
-        vender: ["render", "comprar"], aluguel: ["comprar", "render"], poupar: ["comprar", "render"] };
-      let principal = "comprar";
-      const extras = new Set(PLUS.comprar);
-      let estrategia = true;
-      const desenharEscolhas = () => {
-        el.querySelectorAll("[data-obj]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.obj === principal)));
-        el.querySelector('[data-alvo="extras"]').innerHTML = OBJ.filter(o => o.k !== principal && !(principal === "comprar" && o.k === "quitar") && !(principal === "quitar" && o.k === "comprar"))
-          .map(o => `<button class="chip-op chip-mini" data-extra="${o.k}" aria-pressed="${extras.has(o.k)}">${o.nome}</button>`).join("");
-        el.querySelectorAll("[data-extra]").forEach(b => b.addEventListener("click", () => {
-          extras.has(b.dataset.extra) ? extras.delete(b.dataset.extra) : extras.add(b.dataset.extra);
-          desenharEscolhas(); montar();
-        }));
+      let pilar = "aquisicao", estrategia = true;
+      const blocos = new Set(SUGESTAO.aquisicao);
+      const sincronizar = () => {
+        el.querySelectorAll("[data-pilar-p]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pilarP === pilar)));
+        el.querySelectorAll("[data-bloco]").forEach(c => { c.checked = blocos.has(c.dataset.bloco); });
       };
       const montar = () => {
         if (!el.isConnected) { document.removeEventListener("redecon:estado", montar); return; }
         const n = numerosProposta(ctx), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
-        const obj = OBJ.find(o => o.k === principal), foco = focoProposta(principal, n, ctx);
-        const lista = [...extras].filter(k => k !== principal && !(principal === "comprar" && k === "quitar") && !(principal === "quitar" && k === "comprar"));
-        const cols = lista.length <= 3 ? Math.max(1, lista.length) : lista.length === 4 ? 2 : 3;
+        const P = PILAR[pilar];
+        // Foco: o primeiro bloco marcado do pilar principal; os demais viram "outros caminhos"
+        const marcados = Object.keys(BLOCOS).filter(k => blocos.has(k));
+        const focoK = marcados.find(k => BLOCOS[k].pilar === pilar) || null;
+        const outros = marcados.filter(k => k !== focoK);
+        const foco = focoK ? bloco(focoK, n, ctx) : null;
         const fun = ctx.D.funil || [];
+        const cols = Math.min(4, Math.max(1, outros.length));
         el.querySelector('[data-alvo="folha"]').innerHTML = `
           <header class="pf-topo">
             <img src="img/logo-positivo.png" alt="Redecon Consórcios">
             <div><strong>${ctx.T("prop_titulo")}</strong><span>${new Date().toLocaleDateString("pt-BR")}${aj.apresentador ? " · " + ctx.esc(aj.apresentador) : ""}</span></div>
           </header>
-          <div class="pf-faixa">
-            <div class="pf-cli">${aj.cliente ? ctx.esc(aj.cliente) : "Seu plano"}<span>Objetivo: <strong>${obj.nome}</strong></span></div>
-            <div class="pf-kpi"><span>Crédito</span><strong>${f(n.b.credito)}</strong></div>
-            <div class="pf-kpi"><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
+          <div class="pf-cliente-linha">
+            <span>Preparada para</span><strong>${aj.cliente ? ctx.esc(aj.cliente) : "Cliente"}</strong>
+            <em class="pf-tag">${icone(P.ico)} Foco: ${P.nome}</em>
           </div>
+
+          <p class="pf-sec"><b>1</b> Seu plano</p>
+          <div class="pf-plano3">
+            <div><span>Crédito</span><strong>${f(n.b.credito)}</strong></div>
+            <div><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
+            <div class="pf-plano-sim"><span>Sem entrada · sem juros</span><small>Cenário: contemplação no mês ${n.e.mes}</small></div>
+          </div>
+
+          ${foco ? `<p class="pf-sec"><b>2</b> ${P.nome}: ${BLOCOS[focoK].nome.toLowerCase()}</p>
           <section class="pf-foco">
-            <div class="pf-foco-esq">
-              <div class="pf-foco-tit">${icone(obj.ico)}<span>${obj.nome}</span></div>
-              <strong class="pf-grande">${foco.grande}</strong>
-              <span class="pf-legenda">${foco.legenda}</span>
-              <div class="pf-apoio">${foco.apoio.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
+            <div>
+              <p class="pf-contexto">${foco.contexto}</p>
+              <strong class="pf-grande">${foco.destaque}</strong><span class="pf-legenda">${foco.dLeg}</span>
+              <div class="pf-apoio">${foco.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
             </div>
-            <div class="pf-foco-dir">${foco.graf}<p class="pf-nota">${foco.nota}</p></div>
-          </section>
-          <div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + principal)}</p></div>
-          ${lista.length ? `<p class="pf-sec">Também possível com o seu crédito</p>
-          <div class="pf-extras" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${lista.map(k => {
-            const o = OBJ.find(x => x.k === k), [r, v] = extraProposta(k, n, ctx);
-            return `<div class="pf-extra">${icone(o.ico)}<div><span>${r}</span><strong>${v}</strong></div></div>`; }).join("")}</div>` : ""}
-          ${estrategia && fun.length ? `<p class="pf-sec">Como chegar lá: parcelas em dia</p>
+            <div class="pf-foco-dir">${foco.graf}</div>
+          </section>` : ""}
+
+          ${outros.length ? `<p class="pf-sec"><b>${foco ? 3 : 2}</b> Outros caminhos com o mesmo crédito</p>
+          <div class="pf-outros" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${outros.map(k => {
+            const x = bloco(k, n, ctx), B = BLOCOS[k];
+            return `<div class="pf-outro">
+              <div class="pf-outro-tit">${icone(B.ico)}<div><small>${PILAR[B.pilar].nome}</small><strong>${B.nome}</strong></div></div>
+              <p class="pf-contexto">${x.contexto}</p>
+              <strong class="pf-medio">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span>
+            </div>`; }).join("")}</div>` : ""}
+
+          <div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div>
+
+          ${estrategia && fun.length ? `<p class="pf-sec"><b>✓</b> Como chegar lá: parcelas em dia</p>
           <div class="pf-trilha">${fun.map(x => `<div class="${x === n.f4 ? "melhor" : ""}"><strong>${ctx.fmtPct(x.concorrencia)}</strong><span>${ctx.esc(x.modalidade)}</span></div>`).join("")}</div>
-          <p class="pf-nota">Concorrência média histórica por modalidade. Lance embutido de até ${ctx.fmtPct(n.p.lance_embutido)} do crédito.</p>` : ""}
-          <p class="pf-aviso">${ctx.T("prop_aviso")} Premissas: contemplação no mês ${n.e.mes} por ${n.e.modalidade === "embutido" ? "lance embutido" : "sorteio"}; reajuste de ${ctx.fmtPct(n.b.reajuste)} ao ano; crédito rendendo ${ctx.fmtPct(n.p.pct_selic_credito)} da Selic.</p>
+          <p class="pf-nota">Concorrência média histórica por modalidade. Quanto mais parcelas seguidas em dia, menor a concorrência. Lance embutido de até ${ctx.fmtPct(n.p.lance_embutido)} do crédito.</p>` : ""}
+
+          <p class="pf-aviso">${ctx.T("prop_aviso")} Premissas: contemplação no mês ${n.e.mes} por ${n.e.modalidade === "embutido" ? "lance embutido" : "sorteio"}; reajuste de ${ctx.fmtPct(n.b.reajuste)} ao ano; crédito aplicado rendendo ${ctx.fmtPct(n.p.pct_selic_credito)} da Selic; financiamento ${n.sistema} a ${ctx.fmtPct(n.p.fin_taxa_aa, 2)} ao ano + TR.</p>
           <footer class="pf-rodape">
             <span>Proposta válida até <strong>${validade()}</strong></span>
             <span>${ii("ct_telefone")} · ${ii("ct_instagram")} · ${ii("ct_site")}</span>
           </footer>`;
       };
-      el.querySelectorAll("[data-obj]").forEach(bt => bt.addEventListener("click", () => { principal = bt.dataset.obj; extras.clear(); PLUS[principal].forEach(k => extras.add(k)); desenharEscolhas(); montar(); }));
+      el.querySelector("[data-cliente]").addEventListener("input", ev => { ctx.definirCliente(ev.target.value); montar(); });
+      el.querySelectorAll("[data-pilar-p]").forEach(bt => bt.addEventListener("click", () => {
+        pilar = bt.dataset.pilarP; blocos.clear(); SUGESTAO[pilar].forEach(k => blocos.add(k)); sincronizar(); montar();
+      }));
+      el.querySelectorAll("[data-bloco]").forEach(c => c.addEventListener("change", () => { c.checked ? blocos.add(c.dataset.bloco) : blocos.delete(c.dataset.bloco); montar(); }));
       el.querySelector("[data-estrategia]").addEventListener("change", ev => { estrategia = ev.target.checked; montar(); });
       el.querySelector('[data-acao="pdf"]').addEventListener("click", () => {
         let caixa = document.getElementById("impressao");
@@ -389,9 +398,9 @@
         const imprimir = () => { window.print(); document.title = tituloAntes; };
         img && !img.complete ? img.addEventListener("load", imprimir, { once: true }) : imprimir();
       });
-      desenharEscolhas();
+      sincronizar();
       document.addEventListener("redecon:estado", montar);
-      el._aoMostrar = montar;
+      el._aoMostrar = () => { const i = el.querySelector("[data-cliente]"); if (document.activeElement !== i) i.value = ctx.ajustes.cliente || ""; montar(); };
       montar();
     }
   };

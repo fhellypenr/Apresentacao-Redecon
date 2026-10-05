@@ -86,7 +86,7 @@ html.animado .capa.ativo .capa-arcos path:nth-child(4) { animation-delay: .45s; 
   background: var(--degrade); -webkit-background-clip: text; background-clip: text; color: transparent;
   font-variant-numeric: tabular-nums;
 }
-.placar p { margin: .4em 0 0; color: var(--texto-suave); max-width: 24ch; }
+.placar p { margin: .4em 0 0; color: var(--texto-suave); max-width: 34ch; }
 .placar .placar-meses { color: var(--texto); font-weight: 600; font-size: 1.1em; margin-top: 1.2em; }
 .placar-modalidade { color: var(--texto); font-weight: 600; }
 
@@ -808,4 +808,55 @@ html.animado .capa.revelar .capa-rodape { animation: subir .8s cubic-bezier(.2,.
   #impressao .pf-sec { margin-top: 22px; }
   #impressao .pf-barras { gap: 14px; }
   #impressao .pf-trilho { height: 20px; }
+}
+.nota-venda { margin: 10px 0 0; font-size: .78em; color: var(--azul-300); }
+.nota-venda strong { color: var(--texto); }
+.funil2 { grid-template-columns: minmax(340px, 1fr) minmax(0, 1.35fr); }
+.funil2 .placar p { max-width: none; }
+
+/* ---------- Proposta em blocos ---------- */
+.prop-nome { display: grid; gap: 6px; }
+.prop-nome input { font: inherit; color: var(--texto); background: var(--azul-900); border: 1px solid var(--linha); border-radius: 8px; padding: 8px 12px; }
+.prop-blocos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: .85em; }
+.prop-grupo { display: grid; gap: 4px; }
+.prop-grupo > span { font-size: .78em; color: #FF8A7A; font-weight: 700; }
+.pf-cliente-linha { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; }
+.pf-cliente-linha span { color: #5A6B8C; font-size: .9em; }
+.pf-cliente-linha > strong { font-family: var(--fonte-titulo); font-size: 1.4em; color: #101F3D; }
+.pf-tag { margin-left: auto; font-style: normal; display: inline-flex; align-items: center; gap: 6px; background: #101F3D; color: #fff; border-radius: 999px; padding: 4px 12px 4px 8px; font-size: .82em; font-weight: 700; }
+.pf-tag .ico { width: 18px; stroke: #FF8A7A; }
+.pf-sec { display: flex; align-items: center; gap: 8px; }
+.pf-sec b { display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 50%; background: #F84434; color: #fff; font-size: .8em; }
+.pf-plano3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.pf-plano3 > div { background: #F4F6FA; border-radius: 10px; padding: 10px 14px; display: grid; align-content: center; }
+.pf-plano3 span { font-size: .8em; color: #5A6B8C; }
+.pf-plano3 strong { font-family: var(--fonte-titulo); font-size: 1.4em; color: #D81840; }
+.pf-plano-sim { background: #101F3D !important; }
+.pf-plano-sim span { color: #fff !important; font-weight: 700; font-size: .9em !important; }
+.pf-plano-sim small { color: #B7C3DC; font-size: .78em; }
+.pf-foco { margin-top: 6px; }
+.pf-contexto { margin: 0 0 4px; font-size: .85em; color: #5A6B8C; }
+.pf-outros { display: grid; gap: 10px; }
+.pf-outro { background: #F4F6FA; border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; align-content: start; }
+.pf-outro-tit { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.pf-outro-tit .ico { width: 26px; stroke: #F84434; flex: none; }
+.pf-outro-tit div { display: grid; }
+.pf-outro-tit small { font-size: .68em; text-transform: uppercase; letter-spacing: .06em; color: #D81840; font-weight: 700; }
+.pf-outro-tit strong { font-family: var(--fonte-titulo); color: #101F3D; font-size: .95em; }
+.pf-outro .pf-contexto { font-size: .76em; }
+.pf-medio { font-family: var(--fonte-titulo); font-weight: 800; font-size: 1.35em; color: #D81840; }
+.pf-apoio div span { max-width: 70%; }
+@media print {
+  #impressao .prop-folha { font-size: 11pt; }
+  #impressao .pf-sec { margin-top: 14px; }
+  #impressao .pf-foco { padding: 12px 16px; margin-top: 6px; }
+  #impressao .pf-indica { margin-top: 12px; }
+  #impressao .pf-barras { gap: 10px; }
+  #impressao .pf-trilho { height: 16px; }
+}
+@media print {
+  @page { size: A4; margin: 10mm 12mm; }
+  #impressao .pf-outro { padding: 8px 10px; }
+  #impressao .pf-aviso { font-size: .7em; margin-top: 8px; }
+  #impressao .pf-rodape { margin-top: 8px; }
 }

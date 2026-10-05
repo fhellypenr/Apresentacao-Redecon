@@ -181,6 +181,8 @@
     get D() { return D; }, T, esc, fmtPct, fmtReal,
     get estado() { return estado; },
     get ajustes() { return ajustes; },
+    // Muda o nome do cliente sem remontar a apresentação (usado na proposta)
+    definirCliente(nome) { ajustes.cliente = String(nome || "").trim(); salvarAjustes(); const i = $("#aj-cliente"); if (i) i.value = ajustes.cliente; },
     // Vai para a primeira tela da lista que estiver ligada
     irPara(ids) { for (const id of [].concat(ids)) { const k = LISTA.findIndex(t => t.id === id); if (k >= 0) { ir(k); return; } } },
     mudou() { document.dispatchEvent(new CustomEvent("redecon:estado")); }

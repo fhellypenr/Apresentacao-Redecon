@@ -6,7 +6,7 @@ window.DADOS_PADRAO = {
   parametros: {
     selic_auto: 0.1375, selic_manual: null, pct_selic_credito: 0.80,
     reajuste_aa: 0.05, incc_12m: null, lance_embutido: 0.30, meses_sem_pagar_lance: 2,
-    seguro_prestamista: 0.00055, agio_venda: 0.20,
+    seguro_prestamista: 0.00055, agio_venda: 0.20, venda_tir_ref: 0.01,
     cdi_auto: 0.1365, cdb_pct_cdi: 1.00, poupanca_am: 0.005, tr_aa: 0.01166,
     fin_taxa_aa: 0.115, fin_entrada: 0.20, fin_prazo: 360, fin_sistema: "SAC", fin_cet_aa: null,
     aluguel_am: 0.004, aluguel_barracao_am: 0.01, dolar_reserva: 5.22, st_diaria_usd: 40, st_ocupacao: 0.75, st_custos: 0.40,
@@ -58,6 +58,9 @@ window.DADOS_PADRAO = {
   },
   casos: [],
   textos: {
+    prop_ind_aquisicao: "A Redecon indica a meia parcela com foco nas fidelidades: você chega ao imóvel sem entrada, sem juros e sem se descapitalizar.",
+    prop_ind_poupanca: "A Redecon indica a disciplina da parcela em dia: o crédito é reajustado todo ano e as fidelidades vão sendo liberadas.",
+    prop_ind_investimento: "A Redecon indica contemplar e escolher o melhor caminho para o crédito: deixá-lo rendendo, vender a carta ou investir em um imóvel para renda.",
     prop_ind_comprar: "A Redecon indica a meia parcela com foco nas fidelidades: você chega ao imóvel sem entrada, sem juros e sem se descapitalizar.",
     prop_ind_quitar: "A Redecon indica trocar os juros do banco pela taxa do consórcio: contemplado, o crédito quita o saldo do financiamento.",
     prop_ind_render: "A Redecon indica contemplar e manter o crédito aplicado: o rendimento é sobre o valor total e pode ajudar a pagar a parcela.",

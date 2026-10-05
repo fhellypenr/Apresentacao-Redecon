@@ -352,7 +352,8 @@
       ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade", "agio"])}
       <div class="dois dois-venda afastado">
         <div class="nums" data-alvo="nums"></div>
-        <div><p class="graf-titulo">Ganho conforme o mês da contemplação (toque numa barra para escolher)</p><div data-alvo="graf"></div></div>
+        <div><p class="graf-titulo">Ganho conforme o mês da contemplação (toque numa barra para escolher)</p><div data-alvo="graf"></div>
+          <p class="nota-venda" data-alvo="nota-venda"></p></div>
       </div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => reagir(el, ctx, () => {
@@ -370,6 +371,19 @@
         return { s, c, v, cdb, tirVenda, tirCdb };
       };
       const a = calc(e.mes);
+      // Até qual mês de contemplação a venda mantém rendimento equivalente acima da referência (busca binária)
+      const ref = b.p.venda_tir_ref || 0.01;
+      const tirMes = m => { const r = calc(m); return r.tirVenda == null ? -1 : r.tirVenda; };
+      let lo = 6, hi = Math.min(b.prazo - 1, 240), mesLimite = null;
+      if (tirMes(lo) >= ref) {
+        if (tirMes(hi) >= ref) mesLimite = hi;
+        else { while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (tirMes(mid) >= ref) lo = mid; else hi = mid; } mesLimite = lo; }
+      }
+      const refTxt = pctTxt(ref, ref * 100 % 1 ? 2 : 0);
+      el.querySelector('[data-alvo="nota-venda"]').innerHTML = mesLimite == null
+        ? `Nessas condições, a venda da carta rende menos de ${refTxt} ao mês em qualquer mês de contemplação.`
+        : mesLimite >= Math.min(b.prazo - 1, 240) ? `Nessas condições, a venda da carta mantém rendimento acima de ${refTxt} ao mês em todo o prazo.`
+        : `Nessas condições, vender a carta faz mais sentido com contemplação até o <strong>mês ${mesLimite}</strong>: até lá, o rendimento equivalente fica acima de ${refTxt} ao mês.`;
       const venceu = a.v.lucro > a.cdb.ganho;
       const vezes = a.cdb.ganho > 0 ? a.v.lucro / a.cdb.ganho : null;
       const dif = a.v.lucro - a.cdb.ganho;
@@ -377,7 +391,7 @@
       const ritmo = a.tirVenda != null && a.tirCdb != null
         ? `<p class="ritmo">Rendimento equivalente: <strong>${pctTxt(a.tirVenda, 2)} ao mês</strong> na venda, contra ${pctTxt(a.tirCdb, 2)} ao mês no CDB.</p>` : "";
       const orientacao = venceu ? "" :
-        `<p class="orientacao-curta"><strong>${ctx.T("in_venda_orientacao_t")}</strong> ${ctx.T("in_venda_orientacao")}</p>`;
+        `<p class="orientacao-curta">${ctx.T("in_venda_orientacao")}</p>`;
       el.querySelector('[data-alvo="nums"]').innerHTML = `
         <p class="linha-info">Contemplado no mês ${e.mes}, você pagou <strong>${f(a.c.pagoTotal)}</strong></p>
         <div class="grade-venda">

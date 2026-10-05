@@ -282,47 +282,68 @@
     const alt = alts.find(a => a.taxa_am > 0);
     const s0 = H.cota(b, { modalidade: "nenhuma" });
     const credAno = anos => s0.meses[Math.min(anos * 12 + 1, b.prazo) - 1].creditoAtual;
+    const parcAno = anos => s0.meses[Math.min(anos * 12 + 1, b.prazo) - 1].parcela;
     const f4 = (ctx.D.funil || []).slice().sort((x, y) => x.concorrencia - y.concorrencia)[0];
     const rendeVista = b.credito * H.cdbLiquidoAm(b);
-    return { b, e, p, parc, c, cred, cmp, venda, cdb, alt, credAno, f4, rendeVista,
+    return { b, e, p, parc, c, cred, cmp, venda, cdb, alt, credAno, parcAno, f4, rendeVista,
       rende1: cred * b.rendAm, parcPos: sc.parcelaPosInicial,
       alug: cred * p.aluguel_am, altV: alt ? cred * alt.taxa_am : 0, sistema: e.sistema || "Price" };
   }
-  const barras = (itens, f) => {
+  // ---------- Mini ilustrações da folha (poucos números, visual que lembra o que foi visto) ----------
+  // Barras horizontais sem valores: só a proporção entre as coisas
+  const miniBarras = itens => {
     const max = Math.max(...itens.map(i => Math.abs(i.v)), 1);
-    return `<div class="pf-barras">${itens.map(i => `
-      <div class="pf-barra"><span>${i.r}</span><div class="pf-trilho"><i class="${i.cls || ""}" style="width:${Math.max(3, Math.abs(i.v) / max * 100).toFixed(1)}%"></i></div><strong>${f(i.v)}</strong></div>`).join("")}</div>`;
+    return `<div class="pf-mb">${itens.map(i => `
+      <div class="pf-mb-linha"><span>${i.r}${i.sub ? `<small>${i.sub}</small>` : ""}</span><div class="pf-mb-trilho"><i class="${i.cls || ""}" style="width:${Math.max(4, Math.abs(i.v) / max * 100).toFixed(1)}%"></i></div></div>`).join("")}</div>`;
   };
-  // Conteúdo de cada bloco: contexto (de onde vem o número), destaque, pares e gráfico
+  // Colunas subindo (crédito que cresce)
+  const miniColunas = itens => {
+    const max = Math.max(...itens.map(i => i.v), 1), min = Math.min(...itens.map(i => i.v));
+    return `<div class="pf-mc">${itens.map((i, k) => `
+      <div class="pf-mc-col"><i class="${k === 0 ? "neutra" : ""}" style="height:${(30 + (i.v - min) / ((max - min) || 1) * 70).toFixed(0)}%"></i><span>${i.r}</span></div>`).join("")}
+      <svg class="pf-mc-seta" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M4 34 L96 6"/><path d="M84 5 L96 6 L91 17"/></svg></div>`;
+  };
+  // Conteúdo de cada opção: frase curta, ilustração e uma linha pequena de números
   function bloco(k, n, ctx) {
     const f = v => ctx.fmtReal(v, 2), mes = n.e.mes;
     switch (k) {
       case "comparativo": return {
-        contexto: `Imóvel de ${f(n.b.credito)}, com reajustes e contemplação no mês ${mes}`, grafTit: "Total pago pelo mesmo imóvel",
-        destaque: f(n.cmp.economia), dLeg: "a menos que no financiamento",
-        pares: [[`Financiamento (${n.sistema}), total pago`, f(n.cmp.fin.totalPago)], ["Consórcio, total pago", f(n.cmp.total)], ["À vista, deixaria de render", f(n.rendeVista) + "/mês"]],
-        graf: barras([{ r: "Financiamento", v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", v: n.cmp.total }], f) };
+        frase: "O mesmo imóvel, sem entrada e sem juros: a diferença no total pago é grande.",
+        visual: miniBarras([{ r: "Financiamento", sub: `${n.p.fin_prazo} meses`, v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", sub: `${n.b.prazo} meses`, v: n.cmp.total }]),
+        num: `Diferença estimada de <b>${f(n.cmp.economia)}</b> no total pago, contemplando no mês ${mes}.` };
       case "reajuste": return {
-        contexto: `Enquanto aguarda a contemplação, o crédito sobe ${ctx.fmtPct(n.b.reajuste)} ao ano`, grafTit: "Crédito ao longo do tempo",
-        destaque: f(n.credAno(5)), dLeg: "de crédito em 5 anos",
-        pares: [["Crédito hoje", f(n.b.credito)], ["Em 5 anos", f(n.credAno(5))], ["Em 10 anos", f(n.credAno(10))]],
-        graf: barras([{ r: "Hoje", v: n.b.credito, cls: "neutra" }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }], f) };
+        frase: "Mesmo antes da contemplação, o seu crédito é reajustado todo ano.",
+        visual: miniColunas([{ r: "Hoje", v: n.b.credito }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }]),
+        num: `Em 5 anos, crédito de <b>${f(n.credAno(5))}</b>; a parcela acompanha na mesma proporção (${f(n.parcAno(5))}).` };
       case "rendendo": return {
-        contexto: `Contemplado no mês ${mes}, crédito de ${f(n.cred)} aplicado`, grafTit: "Por mês: rendimento × parcela",
-        destaque: f(n.rende1), dLeg: "de rendimento no 1º mês",
-        pares: [["Crédito aplicado", f(n.cred)], ["Rendimento no 1º mês", f(n.rende1)], ["Parcela depois de contemplar", f(n.parcPos)]],
-        graf: barras([{ r: "Rendimento", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }], f) };
+        frase: "Depois de contemplado, você não é obrigado a usar o crédito: ele fica rendendo sobre o valor total.",
+        visual: miniBarras([{ r: "Rendimento no mês", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
+        num: `Contemplando no mês ${mes}, cerca de <b>${f(n.rende1)}</b> de rendimento no 1º mês, com a Selic de hoje.` };
       case "venda": return {
-        contexto: `Contemplado no mês ${mes}, tendo pago ${f(n.c.pagoTotal)}`, grafTit: "Lucro na venda × mesmas parcelas no CDB",
-        destaque: f(n.venda.recebe), dLeg: `valor de venda da carta (ágio de ${ctx.fmtPct(n.e.agio)})`,
-        pares: [["Total pago até a contemplação", f(n.c.pagoTotal)], ["Valor de venda", f(n.venda.recebe)], ["Lucro na venda", f(n.venda.lucro)]],
-        graf: barras([{ r: "Venda", v: n.venda.lucro }, { r: "CDB", v: n.cdb.ganho, cls: "neutra" }], f) };
-      default: return {
-        contexto: `Crédito de ${f(n.cred)} investido em um imóvel`, grafTit: "Por mês: aluguel × parcela",
-        destaque: f(Math.max(n.alug, n.altV)) + "/mês", dLeg: "de aluguel estimado",
-        pares: [["Aluguel tradicional", f(n.alug) + "/mês"], ...(n.alt ? [[ctx.esc(n.alt.nome), f(n.altV) + "/mês"]] : []), ["Parcela depois de contemplar", f(n.parcPos)]],
-        graf: barras([{ r: "Tradicional", v: n.alug }, ...(n.alt ? [{ r: ctx.esc(n.alt.nome), v: n.altV }] : []), { r: "Parcela", v: n.parcPos, cls: "neutra" }], f) };
+        frase: n.venda.lucro > n.cdb.ganho ? "Liberdade para vender a carta contemplada, com ganho acima de uma aplicação tradicional." : "Liberdade para vender a carta contemplada, se for o melhor caminho no momento.",
+        visual: miniBarras([{ r: "Venda da carta", v: n.venda.lucro }, { r: "Aplicação", sub: "mesmas parcelas", v: n.cdb.ganho, cls: "neutra" }]),
+        num: `Ganho estimado de <b>${f(n.venda.lucro)}</b> na venda, contra ${f(n.cdb.ganho)} das mesmas parcelas aplicadas.` };
+      default: {
+        const melhor = n.alt && n.altV > n.alug ? { nome: ctx.esc(n.alt.nome).toLowerCase(), v: n.altV } : { nome: "aluguel tradicional", v: n.alug };
+        return {
+          frase: "O imóvel trabalha para você: o aluguel ajuda a pagar a parcela, e o próprio inquilino pode quitar o consórcio.",
+          visual: miniBarras([{ r: "Aluguel", v: melhor.v }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
+          num: `Com ${melhor.nome}, cerca de <b>${f(melhor.v)}/mês</b>, para uma parcela de ${f(n.parcPos)}.` };
+      }
     }
+  }
+  // Funil das fidelidades: quanto mais parcelas seguidas em dia, menos gente disputando
+  function funilFolha(fun, ctx) {
+    const N = fun.length, W = 600, H = 106, w = W / N, meio = 40, hMax = 36, hMin = 11;
+    const meia = i => hMax - (hMax - hMin) * i / N;
+    const seg = fun.map((x, i) => {
+      const x0 = i * w + 1, x1 = (i + 1) * w - 1, a = meia(i), b = meia(i + 1), ult = i === N - 1;
+      return `<path class="${ult ? "melhor" : ""}" style="--t:${(i / (N - 1)).toFixed(2)}" d="M${x0} ${meio - a} L${x1} ${meio - b} L${x1} ${meio + b} L${x0} ${meio + a}Z"/>
+        <text class="pct" x="${(x0 + x1) / 2}" y="${meio + 5}">${ctx.fmtPct(x.concorrencia)}</text>
+        <text class="mod" x="${(x0 + x1) / 2}" y="${meio + hMax + 11}">${ctx.esc(x.modalidade)}</text>
+        <text class="cond" x="${(x0 + x1) / 2}" y="${meio + hMax + 22}">${x.meses ? x.meses + " parcelas em dia" : "parcela em dia"}</text>`;
+    }).join("");
+    return `<svg class="pf-funil" viewBox="0 0 ${W} ${H}" role="img" aria-label="Concorrência por modalidade de contemplação">${seg}</svg>`;
   }
   // Premissas da folha: só as que valem para os blocos escolhidos
   function premissas(n, marcados, ctx) {
@@ -371,6 +392,7 @@
         const ehDoFoco = k => BLOCOS[k].pilar === pilar;
         const ordem = [...marcados.filter(ehDoFoco), ...marcados.filter(k => !ehDoFoco(k))];
         const fun = ctx.D.funil || [];
+        const itensRedecon = lista(ctx.T("compromisso_redecon_itens"));
         el.querySelector('[data-alvo="folha"]').innerHTML = `
           <header class="pf-topo">
             <img src="img/logo-positivo.png" alt="Redecon Consórcios">
@@ -383,37 +405,37 @@
           <div class="pf-corpo">
           <div class="pf-bloco">
             <p class="pf-sec"><b>1</b> Seu plano</p>
-            <div class="pf-plano3">
+            <div class="pf-plano4">
               <div><span>Crédito</span><strong>${f(n.b.credito, 2)}</strong></div>
               <div><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
-              <div class="pf-plano-sim"><span>Sem entrada · sem juros</span><small>Cenário: contemplação no mês ${n.e.mes}</small></div>
+              <div><span>Prazo</span><strong>${n.b.prazo} meses</strong></div>
+              <div class="pf-plano-sim"><span>Sem entrada<br>Sem juros</span></div>
             </div>
           </div>
 
-          ${marcados.length ? `<div class="pf-bloco">
+          ${ordem.length ? `<div class="pf-bloco">
             <p class="pf-sec"><b>2</b> O que o seu crédito pode fazer</p>
-            <div class="pf-cards">${ordem.map(k => {
+            <div class="pf-opcoes">${ordem.map(k => {
               const x = bloco(k, n, ctx), B = BLOCOS[k], ehFoco = ehDoFoco(k);
-              return `<section class="pf-card${ehFoco ? " foco" : ""}">
-                <header class="pf-card-topo">
-                  ${icone(B.ico)}<div class="pf-card-nome"><small>${PILAR[B.pilar].nome}${ehFoco ? " · foco do cliente" : ""}</small><strong>${B.nome}</strong></div>
-                  <p class="pf-card-ctx">${x.contexto}</p>
-                </header>
-                <div class="pf-destaque"><strong class="pf-grande">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span></div>
-                <div class="pf-card-grade">
-                  <div class="pf-apoio">${x.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
-                  <div class="pf-foco-dir"><p class="pf-graf-tit">${x.grafTit}</p>${x.graf}</div>
-                </div>
+              return `<section class="pf-op${ehFoco ? " foco" : ""}">
+                <header>${icone(B.ico)}<div><small>${PILAR[B.pilar].nome}${ehFoco ? " · foco do cliente" : ""}</small><strong>${B.nome}</strong></div></header>
+                <div class="pf-op-corpo"><p class="pf-op-frase">${x.frase}</p>${x.visual}</div>
+                <p class="pf-op-num">${x.num}</p>
               </section>`; }).join("")}</div>
           </div>` : ""}
 
           <div class="pf-bloco"><div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div></div>
 
           ${estrategia && fun.length ? `<div class="pf-bloco">
-            <p class="pf-sec"><b>✓</b> Como chegar lá: parcelas em dia</p>
-            <div class="pf-trilha">${fun.map(x => `<div class="${x === n.f4 ? "melhor" : ""}"><strong>${ctx.fmtPct(x.concorrencia)}</strong><span>${ctx.esc(x.modalidade)}</span></div>`).join("")}</div>
-            <p class="pf-nota pf-nota-trilha">Concorrência média histórica por modalidade: quanto mais parcelas seguidas em dia, menor a concorrência. Lance embutido de até ${ctx.fmtPct(n.p.lance_embutido)} do crédito.</p>
+            <p class="pf-sec"><b>${ordem.length ? 3 : 2}</b> Como chegar lá: as fidelidades</p>
+            <p class="pf-funil-frase">Quanto mais parcelas seguidas em dia, menos gente disputando a contemplação.</p>
+            ${funilFolha(fun, ctx)}
           </div>` : ""}
+
+          <div class="pf-bloco pf-comp">
+            <div class="pf-comp-cli"><span>${ctx.T("compromisso_cliente_rotulo")}</span><strong>${ctx.T("compromisso_cliente")}</strong></div>
+            <div class="pf-comp-red"><span>${ctx.T("compromisso_redecon_rotulo")}</span><ul>${itensRedecon.map(i => `<li>${i}</li>`).join("")}</ul></div>
+          </div>
           </div>
           <div class="pf-fim">
           <p class="pf-aviso">${ctx.T("prop_aviso")} Premissas: ${premissas(n, marcados, ctx)}.</p>

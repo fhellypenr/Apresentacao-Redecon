@@ -331,8 +331,8 @@
       `reajuste anual de ${pct(n.b.reajuste)}`];
     if (tem("comparativo")) l.push(`financiamento ${n.sistema} a ${pct(n.p.fin_taxa_aa, 2)} ao ano + TR, com ${pct(n.p.fin_entrada)} de entrada e ${n.p.fin_prazo} meses; à vista, valor aplicado em CDB líquido de IR`);
     if (tem("rendendo")) l.push(`rendimento sobre o crédito total, e não apenas sobre o que foi pago`);
-    if (tem("venda")) l.push(`liberdade de vender a carta contemplada, com ágio de ${pct(n.e.agio)}`);
-    if (tem("aluguel")) l.push(`aluguel tradicional de ${pct(n.p.aluguel_am, 1)} ao mês${n.alt ? `; ${ctx.esc(n.alt.nome).toLowerCase()} de ${pct(n.alt.taxa_am, 1)} ao mês` : ""}`);
+    if (tem("venda")) l.push(`liberdade de vender a carta contemplada`);
+    if (tem("aluguel")) l.push(`renda com aluguel tradicional${n.alt ? ` ou ${ctx.esc(n.alt.nome).toLowerCase()}` : ""}`);
     return l.join("; ");
   }
   const proposta = {

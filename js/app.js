@@ -44,14 +44,23 @@
   const telaLigada = id => telasOn[id] !== false;
   function salvarTelas() { try { localStorage.setItem(TELAS_CHAVE, JSON.stringify(telasOn)); } catch (e) {} }
 
+  // ---------- Animações (preferência própria, ligada por padrão) ----------
+  const ANIM_CHAVE = "redecon_animacoes_v1";
+  let animacoes = true;
+  try { animacoes = localStorage.getItem(ANIM_CHAVE) !== "0"; } catch (e) {}
+  const animado = () => animacoes;
+  function aplicarAnimacoes() { document.documentElement.classList.toggle("animado", animacoes); }
+  aplicarAnimacoes();
+
   // ---------- Telas ----------
   function telaCapa() {
     const cliente = ajustes.cliente ? `<div><span>Preparado para</span><strong>${esc(ajustes.cliente)}</strong></div>` : "";
     const apres = ajustes.apresentador ? `<div><span>Apresentado por</span><strong>${esc(ajustes.apresentador)}</strong></div>` : "";
     return `
+      <canvas class="capa-rede" aria-hidden="true"></canvas>
       <img class="capa-logo" src="img/logo-negativo.png" alt="Redecon Consórcios">
       <div class="capa-meio">
-        <h1>${T("capa_titulo")}</h1>
+        <h1>${T("capa_titulo").split(" ").map((w, i) => `<span class="palavra" style="--k:${i}">${w}</span>`).join(" ")}</h1>
         <p class="sub">${T("capa_subtitulo")}</p>
       </div>
       <div class="capa-rodape">
@@ -191,7 +200,7 @@
     const E = window.ETAPA4 || {};
     const casosOk = D.casos && D.casos.length;
     return [
-      { nome: "Abertura", telas: [{ id: "capa", nome: "Capa", classe: "capa", html: telaCapa }] },
+      { nome: "Abertura", telas: [{ id: "capa", nome: "Capa", classe: "capa", html: telaCapa, iniciar: iniciarCapa }] },
       { nome: "Quem somos", telas: [E.quemRedecon, E.quemHs].filter(Boolean).map(comCtx) },
       { nome: "Virada de chave", telas: [E.virada].filter(Boolean).map(comCtx) },
       { nome: "Método API", telas: [E.mapa].filter(Boolean).map(comCtx) },
@@ -211,6 +220,53 @@
   let ROTEIRO = [], SECOES = [], LISTA = [];
   let atual = 0;
 
+  // ---------- Capa: rede de conexões viva (Redecon = rede) ----------
+  // Pontos que se movem e se ligam quando se aproximam; reagem ao toque/mouse.
+  function iniciarCapa(el) {
+    const cv = $(".capa-rede", el), g = cv.getContext("2d");
+    let W = 0, H = 0, dpr = 1, pts = [], quadro = null, mouse = null;
+    function medir() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = el.clientWidth; H = el.clientHeight;
+      cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px";
+      const n = Math.round(Math.min(110, Math.max(40, W * H / 16000)));
+      pts = Array.from({ length: n }, (_, i) => ({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35,
+        r: Math.random() < .12 ? 3.2 : 1.8, quente: Math.random() < .18
+      }));
+    }
+    function passo() {
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, W, H);
+      const lim = Math.min(170, W / 8);
+      for (const p of pts) {
+        if (animado()) { p.x += p.vx; p.y += p.vy; }
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+        if (mouse) { const dx = mouse.x - p.x, dy = mouse.y - p.y, d = Math.hypot(dx, dy); if (d < 180 && d > 1) { p.x += dx / d * .6; p.y += dy / d * .6; } }
+      }
+      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+        const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d < lim) {
+          const al = (1 - d / lim) * .35;
+          g.strokeStyle = a.quente || b.quente ? `rgba(248,68,52,${al})` : `rgba(142,160,196,${al})`;
+          g.lineWidth = 1; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+        }
+      }
+      for (const p of pts) {
+        g.fillStyle = p.quente ? "rgba(248,68,52,.9)" : "rgba(183,195,220,.55)";
+        g.beginPath(); g.arc(p.x, p.y, p.r, 0, Math.PI * 2); g.fill();
+      }
+      quadro = el.isConnected ? requestAnimationFrame(passo) : null;
+    }
+    el.addEventListener("pointermove", e => { const r = el.getBoundingClientRect(); mouse = { x: e.clientX - r.left, y: e.clientY - r.top }; });
+    el.addEventListener("pointerleave", () => { mouse = null; });
+    window.addEventListener("resize", () => { if (el.isConnected) medir(); });
+    el._reiniciar = () => { medir(); cancelAnimationFrame(quadro); quadro = requestAnimationFrame(passo); };
+    el._sair = () => { cancelAnimationFrame(quadro); quadro = null; };
+  }
+
   // ---------- Funil 3D ----------
   // Um anel de pessoas por modalidade, em perspectiva e girando. O cliente desce até o nível escolhido:
   // os níveis de cima ficam para trás e só o anel atual "disputa" com ele.
@@ -218,7 +274,7 @@
     const NS = "http://www.w3.org/2000/svg";
     const svg = $(".funil3d", el), gAneis = $(".aneis", svg), gMult = $(".multid", svg), cliente = $(".cliente", svg);
     const placar = $(".placar", el), num = $(".placar-num", el), qtd = $(".placar-qtd", el);
-    const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduzir = !animado();
     const F = D.funil, N = F.length, CX = 380, TOPO = 70, PASSO = (430 - TOPO) / Math.max(1, N - 1);
     // Geometria dos anéis: o raio diminui a cada nível (formato de funil)
     const aneis = F.map((f, i) => {
@@ -249,7 +305,7 @@
     let rot = 0, ultimo = performance.now(), quadro = null, sel = 0, mostrado = 85, anim = null;
     function desenhar(t) {
       const dt = Math.min(0.05, (t - ultimo) / 1000); ultimo = t;
-      if (!reduzir) rot += dt * 0.35;
+      if (animado()) rot += dt * 0.35;
       aneis.forEach(a => a.pessoas.forEach(p => {
         const th = p.th + rot * a.dir + a.fase, s = Math.sin(th);
         const x = CX + a.rx * Math.cos(th), y = a.cy + a.ry * s;
@@ -262,7 +318,7 @@
     }
     function contar(alvo) {
       cancelAnimationFrame(anim);
-      if (reduzir) { mostrado = alvo; num.textContent = alvo + "%"; qtd.textContent = alvo; return; }
+      if (!animado()) { mostrado = alvo; num.textContent = alvo + "%"; qtd.textContent = alvo; return; }
       const de = mostrado, t0 = performance.now();
       const passo = t => {
         const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3);
@@ -366,9 +422,8 @@
   const REVELA = ".titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .mapa-ilustra, .opcao, .caminho, .pilar-sint, " +
     ".plano-card, .proximo, .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, " +
     ".placar, .degrau, .funil3d, .etapa, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
-  const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
   function animarEntrada(el) {
-    if (semMovimento || !el) return;
+    if (!animado() || !el) return;
     clearTimeout(el._tAnim);
     el.classList.remove("revelar");
     $$(REVELA, el).forEach((x, k) => x.style.setProperty("--k", Math.min(k, 14)));
@@ -424,6 +479,11 @@
   function abrir(id) { const p = $(id), aberto = p.classList.contains("aberto"); fecharPaineis(); if (!aberto) p.classList.add("aberto"); }
 
   function montarAjustes() {
+    const chk = $("#aj-animacoes");
+    if (chk) {
+      chk.checked = animacoes;
+      chk.addEventListener("change", () => { animacoes = chk.checked; try { localStorage.setItem(ANIM_CHAVE, animacoes ? "1" : "0"); } catch (e) {} aplicarAnimacoes(); });
+    }
     const sel = $("#aj-apresentador");
     sel.innerHTML = `<option value="">Não mostrar</option>` + CONFIG.apresentadores.map(n => `<option>${esc(n)}</option>`).join("");
     $("#aj-cliente").value = ajustes.cliente;

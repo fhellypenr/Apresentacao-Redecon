@@ -860,3 +860,26 @@ html.animado .capa.revelar .capa-rodape { animation: subir .8s cubic-bezier(.2,.
   #impressao .pf-aviso { font-size: .7em; margin-top: 8px; }
   #impressao .pf-rodape { margin-top: 8px; }
 }
+
+/* ---------- Conteúdo principal sempre no meio, entre o título/controles e o rodapé ---------- */
+.centro-vertical { margin-top: auto !important; margin-bottom: auto !important; }
+.slide:has(.centro-vertical) > .aviso, .slide:has(.centro-vertical) > [data-alvo="rodape"] { margin-top: 0; }
+.usos-rodape { margin: clamp(14px, 3vh, 28px) 0 0; }
+.orientacao-curta { font-size: .7em; }
+
+/* ---------- Folha da proposta: blocos espaçados e rodapé no pé ---------- */
+.prop-folha { display: flex; flex-direction: column; aspect-ratio: 210 / 297; min-height: 0; }
+.pf-corpo { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; gap: 16px; padding: 6px 0; }
+.pf-bloco .pf-sec { margin-top: 0; }
+.pf-fim { margin-top: 12px; }
+.pf-contexto-linha { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
+.pf-foco { display: block; }
+.pf-foco-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: center; }
+.pf-graf-tit { margin: 0 0 8px; font-size: .78em; font-weight: 700; color: #101F3D; }
+.pf-nota-trilha { margin-top: 8px; }
+.pf-indica { margin-top: 0; }
+@media print {
+  #impressao .prop-folha { aspect-ratio: auto; height: 275mm; }
+  #impressao .pf-corpo { gap: 12px; }
+  #impressao .pf-sec { margin-top: 0; }
+}

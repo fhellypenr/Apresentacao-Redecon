@@ -82,7 +82,7 @@
       </div>`;
     return `
       <h2 class="titulo">${T("regras_titulo")}</h2>
-      <div class="regras">
+      <div class="regras centro-vertical">
         ${r("regra_investimento")}${r("regra_vencimento")}${r("regra_fidelidade", true)}
       </div>`;
   }
@@ -97,7 +97,7 @@
       </button>`).join("");
     return `
       <h2 class="titulo">${T("funil_titulo")}</h2>
-      <div class="funil2">
+      <div class="funil2 centro-vertical">
         <div class="placar" aria-live="polite">
           <div class="placar-num">85%</div>
           <p class="placar-frase">De cada 100 cotas, <strong class="placar-qtd">85</strong> disputam a contemplação com você.</p>
@@ -142,7 +142,7 @@
     return `
       <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="grad-icone" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#D81840"/><stop offset="1" stop-color="#F84434"/></linearGradient></defs></svg>
       <h2 class="titulo">${T("otimizar_titulo")}</h2>
-      <div class="alavancas">
+      <div class="alavancas centro-vertical">
         ${a("otimizar_grupo", "grupo")}${a("otimizar_multicotas", "multicotas")}
         ${a("otimizar_lance", "lance")}${a("otimizar_fidelidade", "fidelidade")}
       </div>`;
@@ -154,7 +154,7 @@
       .map(s => `<li>${s}</li>`).join("");
     return `
       <h2 class="titulo">${T("compromisso_titulo")}</h2>
-      <div class="compromisso">
+      <div class="compromisso centro-vertical">
         <div class="lado lado-cliente"><h3>${T("compromisso_cliente_rotulo")}</h3><p>${T("compromisso_cliente")}</p></div>
         <div class="lado lado-redecon"><h3>${T("compromisso_redecon_rotulo")}</h3><ul>${itens}</ul></div>
       </div>`;

@@ -143,8 +143,8 @@
         <label class="ctl" data-campo="parcela" hidden><span>Parcela que cabe no mês (R$)</span><input data-f="parcela" class="campo-moeda" inputmode="decimal"></label>
         ${ctl}
       </div>
-      <div class="plano" data-alvo="plano"></div>
-      <div class="proximo"><strong>${ctx.T("fech_proximo_t")}</strong> ${ctx.T("fech_proximo")}</div>
+      <div class="centro-vertical"><div class="plano" data-alvo="plano"></div>
+      <div class="proximo"><strong>${ctx.T("fech_proximo_t")}</strong> ${ctx.T("fech_proximo")}</div></div>
       <div data-alvo="rodape"></div>`;
     },
     iniciar: (el, ctx) => {
@@ -271,27 +271,27 @@
     const f = ctx.fmtReal, mes = n.e.mes;
     switch (k) {
       case "comparativo": return {
-        contexto: `Para um imóvel de ${f(n.b.credito)}, com os reajustes e contemplação no mês ${mes}:`,
+        contexto: `Imóvel de ${f(n.b.credito)}, com reajustes e contemplação no mês ${mes}`, grafTit: "Total pago pelo mesmo imóvel",
         destaque: f(n.cmp.economia), dLeg: "a menos que no financiamento",
         pares: [[`Financiamento (${n.sistema}) — total pago`, f(n.cmp.fin.totalPago)], ["Consórcio — total pago", f(n.cmp.total)], ["Entrada", "Sem entrada"]],
         graf: barras([{ r: "Financiamento", v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", v: n.cmp.total }], f) };
       case "reajuste": return {
-        contexto: `Enquanto aguarda a contemplação, o crédito é reajustado ${ctx.fmtPct(n.b.reajuste)} ao ano:`,
+        contexto: `Enquanto aguarda a contemplação, o crédito sobe ${ctx.fmtPct(n.b.reajuste)} ao ano`, grafTit: "Crédito ao longo do tempo",
         destaque: f(n.credAno(5)), dLeg: "de crédito em 5 anos",
         pares: [["Crédito hoje", f(n.b.credito)], ["Em 5 anos", f(n.credAno(5))], ["Em 10 anos", f(n.credAno(10))]],
         graf: barras([{ r: "Hoje", v: n.b.credito, cls: "neutra" }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }], f) };
       case "rendendo": return {
-        contexto: `Contemplado no mês ${mes}, o crédito de ${f(n.cred)} fica aplicado:`,
+        contexto: `Contemplado no mês ${mes}, crédito de ${f(n.cred)} aplicado`, grafTit: "Por mês: rendimento × parcela",
         destaque: f(n.rende1), dLeg: "de rendimento no 1º mês",
         pares: [["Crédito aplicado", f(n.cred)], ["Rendimento no 1º mês", f(n.rende1)], ["Parcela depois de contemplar", f(n.parcPos)]],
         graf: barras([{ r: "Rendimento", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }], f) };
       case "venda": return {
-        contexto: `Contemplado no mês ${mes}, tendo pago ${f(n.c.pagoTotal)}:`,
+        contexto: `Contemplado no mês ${mes}, tendo pago ${f(n.c.pagoTotal)}`, grafTit: "Lucro na venda × mesmas parcelas no CDB",
         destaque: f(n.venda.recebe), dLeg: `valor de venda da carta (ágio de ${ctx.fmtPct(n.e.agio)})`,
         pares: [["Total pago até a contemplação", f(n.c.pagoTotal)], ["Valor de venda", f(n.venda.recebe)], ["Lucro na venda", f(n.venda.lucro)]],
-        graf: barras([{ r: "Lucro na venda", v: n.venda.lucro }, { r: "Mesmas parcelas no CDB", v: n.cdb.ganho, cls: "neutra" }], f) };
+        graf: barras([{ r: "Venda", v: n.venda.lucro }, { r: "CDB", v: n.cdb.ganho, cls: "neutra" }], f) };
       default: return {
-        contexto: `Com o crédito de ${f(n.cred)} investido em um imóvel:`,
+        contexto: `Crédito de ${f(n.cred)} investido em um imóvel`, grafTit: "Por mês: aluguel × parcela",
         destaque: f(Math.max(n.alug, n.altV)) + "/mês", dLeg: "de aluguel estimado",
         pares: [["Aluguel tradicional", f(n.alug) + "/mês"], ...(n.alt ? [[ctx.esc(n.alt.nome), f(n.altV) + "/mês"]] : []), ["Parcela depois de contemplar", f(n.parcPos)]],
         graf: barras([{ r: "Tradicional", v: n.alug }, ...(n.alt ? [{ r: ctx.esc(n.alt.nome), v: n.altV }] : []), { r: "Parcela", v: n.parcPos, cls: "neutra" }], f) };
@@ -343,44 +343,56 @@
             <span>Preparada para</span><strong>${aj.cliente ? ctx.esc(aj.cliente) : "Cliente"}</strong>
             <em class="pf-tag">${icone(P.ico)} Foco: ${P.nome}</em>
           </div>
-
-          <p class="pf-sec"><b>1</b> Seu plano</p>
-          <div class="pf-plano3">
-            <div><span>Crédito</span><strong>${f(n.b.credito)}</strong></div>
-            <div><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
-            <div class="pf-plano-sim"><span>Sem entrada · sem juros</span><small>Cenário: contemplação no mês ${n.e.mes}</small></div>
+          <div class="pf-corpo">
+          <div class="pf-bloco">
+            <p class="pf-sec"><b>1</b> Seu plano</p>
+            <div class="pf-plano3">
+              <div><span>Crédito</span><strong>${f(n.b.credito)}</strong></div>
+              <div><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
+              <div class="pf-plano-sim"><span>Sem entrada · sem juros</span><small>Cenário: contemplação no mês ${n.e.mes}</small></div>
+            </div>
           </div>
 
-          ${foco ? `<p class="pf-sec"><b>2</b> ${P.nome}: ${BLOCOS[focoK].nome.toLowerCase()}</p>
-          <section class="pf-foco">
-            <div>
-              <p class="pf-contexto">${foco.contexto}</p>
-              <strong class="pf-grande">${foco.destaque}</strong><span class="pf-legenda">${foco.dLeg}</span>
-              <div class="pf-apoio">${foco.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
-            </div>
-            <div class="pf-foco-dir">${foco.graf}</div>
-          </section>` : ""}
+          ${foco ? `<div class="pf-bloco">
+            <p class="pf-sec"><b>2</b> ${P.nome}: ${BLOCOS[focoK].nome.toLowerCase()}</p>
+            <section class="pf-foco">
+              <p class="pf-contexto pf-contexto-linha">${foco.contexto}</p>
+              <div class="pf-foco-grade">
+                <div>
+                  <strong class="pf-grande">${foco.destaque}</strong><span class="pf-legenda">${foco.dLeg}</span>
+                  <div class="pf-apoio">${foco.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
+                </div>
+                <div class="pf-foco-dir"><p class="pf-graf-tit">${foco.grafTit}</p>${foco.graf}</div>
+              </div>
+            </section>
+          </div>` : ""}
 
-          ${outros.length ? `<p class="pf-sec"><b>${foco ? 3 : 2}</b> Outros caminhos com o mesmo crédito</p>
-          <div class="pf-outros" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${outros.map(k => {
-            const x = bloco(k, n, ctx), B = BLOCOS[k];
-            return `<div class="pf-outro">
-              <div class="pf-outro-tit">${icone(B.ico)}<div><small>${PILAR[B.pilar].nome}</small><strong>${B.nome}</strong></div></div>
-              <p class="pf-contexto">${x.contexto}</p>
-              <strong class="pf-medio">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span>
-            </div>`; }).join("")}</div>` : ""}
+          ${outros.length ? `<div class="pf-bloco">
+            <p class="pf-sec"><b>${foco ? 3 : 2}</b> Outros caminhos com o mesmo crédito</p>
+            <div class="pf-outros" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${outros.map(k => {
+              const x = bloco(k, n, ctx), B = BLOCOS[k];
+              return `<div class="pf-outro">
+                <div class="pf-outro-tit">${icone(B.ico)}<div><small>${PILAR[B.pilar].nome}</small><strong>${B.nome}</strong></div></div>
+                <p class="pf-contexto">${x.contexto}</p>
+                <strong class="pf-medio">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span>
+              </div>`; }).join("")}</div>
+          </div>` : ""}
 
-          <div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div>
+          <div class="pf-bloco"><div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div></div>
 
-          ${estrategia && fun.length ? `<p class="pf-sec"><b>✓</b> Como chegar lá: parcelas em dia</p>
-          <div class="pf-trilha">${fun.map(x => `<div class="${x === n.f4 ? "melhor" : ""}"><strong>${ctx.fmtPct(x.concorrencia)}</strong><span>${ctx.esc(x.modalidade)}</span></div>`).join("")}</div>
-          <p class="pf-nota">Concorrência média histórica por modalidade. Quanto mais parcelas seguidas em dia, menor a concorrência. Lance embutido de até ${ctx.fmtPct(n.p.lance_embutido)} do crédito.</p>` : ""}
-
+          ${estrategia && fun.length ? `<div class="pf-bloco">
+            <p class="pf-sec"><b>✓</b> Como chegar lá: parcelas em dia</p>
+            <div class="pf-trilha">${fun.map(x => `<div class="${x === n.f4 ? "melhor" : ""}"><strong>${ctx.fmtPct(x.concorrencia)}</strong><span>${ctx.esc(x.modalidade)}</span></div>`).join("")}</div>
+            <p class="pf-nota pf-nota-trilha">Concorrência média histórica por modalidade: quanto mais parcelas seguidas em dia, menor a concorrência. Lance embutido de até ${ctx.fmtPct(n.p.lance_embutido)} do crédito.</p>
+          </div>` : ""}
+          </div>
+          <div class="pf-fim">
           <p class="pf-aviso">${ctx.T("prop_aviso")} Premissas: contemplação no mês ${n.e.mes} por ${n.e.modalidade === "embutido" ? "lance embutido" : "sorteio"}; reajuste de ${ctx.fmtPct(n.b.reajuste)} ao ano; crédito aplicado rendendo ${ctx.fmtPct(n.p.pct_selic_credito)} da Selic; financiamento ${n.sistema} a ${ctx.fmtPct(n.p.fin_taxa_aa, 2)} ao ano + TR.</p>
           <footer class="pf-rodape">
             <span>Proposta válida até <strong>${validade()}</strong></span>
             <span>${ii("ct_telefone")} · ${ii("ct_instagram")} · ${ii("ct_site")}</span>
-          </footer>`;
+          </footer>
+          </div>`;
       };
       el.querySelector("[data-cliente]").addEventListener("input", ev => { ctx.definirCliente(ev.target.value); montar(); });
       el.querySelectorAll("[data-pilar-p]").forEach(bt => bt.addEventListener("click", () => {

@@ -123,11 +123,11 @@
     id: "aq-usos", nome: "Para que serve o crédito",
     html: ctx => `
       <h2 class="titulo">${ctx.T("aq_usos_titulo")}</h2>
-      <div class="usos">
+      <div class="centro-vertical"><div class="usos">
         ${["comprar", "construir", "quitar"].map(k => `
           <div class="uso"><h3>${ctx.T("aq_usos_" + k + "_t")}</h3><p>${ctx.T("aq_usos_" + k)}</p></div>`).join("")}
       </div>
-      <p class="usos-rodape">${ctx.T("aq_usos_rodape")}</p>`
+      <p class="usos-rodape">${ctx.T("aq_usos_rodape")}</p></div>`
   };
 
   const comparativo = {
@@ -135,8 +135,8 @@
     html: ctx => `
       <h2 class="titulo">${ctx.T("aq_comp_titulo")}</h2>
       ${controles(ctx, ["credito", "prazo", "parcela"])}
-      <div class="tres comp" data-alvo="tres"></div>
-      <div class="economia" data-alvo="economia"></div>
+      <div class="centro-vertical"><div class="tres comp" data-alvo="tres"></div>
+      <div class="economia" data-alvo="economia"></div></div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => {
       let comReaj = false; // padrão: sem reajuste; o apresentador liga se quiser
@@ -206,7 +206,7 @@
       <h2 class="titulo">${ctx.T("po_reaj_titulo")}</h2>
       <p class="sub sub-largo">${ctx.T("po_reaj_sub")}</p>
       ${controles(ctx, ["credito", "prazo", "parcela"])}
-      <div class="dois">
+      <div class="dois centro-vertical">
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Custo real da cota ano a ano (toque no gráfico para escolher o ano)</p><div data-alvo="graf"></div>
           <p class="custo-real" data-alvo="custo"></p></div>
@@ -350,7 +350,7 @@
     html: ctx => `
       <h2 class="titulo">${ctx.T("in_venda_titulo")}</h2>
       ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade", "agio"])}
-      <div class="dois dois-venda afastado">
+      <div class="dois dois-venda centro-vertical">
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Ganho conforme o mês da contemplação (toque numa barra para escolher)</p><div data-alvo="graf"></div>
           <p class="nota-venda" data-alvo="nota-venda"></p></div>
@@ -435,7 +435,7 @@
     html: ctx => `
       <h2 class="titulo">${ctx.T("in_aluguel_titulo")}</h2>
       ${controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade"])}
-      <div class="aluguel-grade">
+      <div class="aluguel-grade centro-vertical">
         <div class="aluguel-cons" data-alvo="resumo"></div>
         <div class="aluguel-col" data-alvo="esq"></div>
         <div class="aluguel-col" data-alvo="dir"></div>

@@ -809,7 +809,7 @@ html.animado .capa.revelar .capa-rodape { animation: subir .8s cubic-bezier(.2,.
   #impressao .pf-barras { gap: 14px; }
   #impressao .pf-trilho { height: 20px; }
 }
-.nota-venda { margin: 10px 0 0; font-size: .78em; color: var(--azul-300); }
+.nota-venda { margin: 8px 0 0; font-size: clamp(10px, .62vw, 12px); line-height: 1.4; color: var(--azul-300); }
 .nota-venda strong { color: var(--texto); }
 .funil2 { grid-template-columns: minmax(340px, 1fr) minmax(0, 1.35fr); }
 .funil2 .placar p { max-width: none; }
@@ -959,3 +959,12 @@ p, li, h1, h2, h3, h4, span, small, strong, label, dd, dt { text-wrap: pretty; }
 .btn-voltar-plano:hover { color: var(--texto); border-color: var(--texto-suave); }
 .slide:has(> .btn-gerar-prop) > .titulo { padding-right: 200px; }
 @media (max-width: 860px) { .slide:has(> .btn-gerar-prop) > .titulo { padding-right: 48px; } }
+
+/* ---------- Proposta: número em destaque com a legenda ao lado ---------- */
+.pf-destaque { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 6px; }
+.pf-destaque .pf-grande { display: inline; margin-top: 0; }
+.pf-destaque .pf-legenda { display: inline; }
+.pf-card-grade { align-items: start; }
+.pf-card-grade .pf-apoio { margin-top: 0; }
+.pf-barra { grid-template-columns: 8.5em 1fr auto; }
+#impressao.compacta .pf-destaque { margin-bottom: 4px; }

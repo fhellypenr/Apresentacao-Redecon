@@ -69,7 +69,7 @@ window.DADOS_PADRAO = {
     prop_ind_aluguel: "A Redecon indica usar o crédito em um imóvel com boa demanda de locação: o aluguel ajuda a pagar a parcela e forma patrimônio.",
     prop_ind_poupar: "A Redecon indica a disciplina da parcela em dia: o crédito é reajustado todo ano e as fidelidades vão sendo liberadas.",
     prop_titulo: "Proposta direcionada",
-    prop_aviso: "Simulação estimada, com base nas premissas atuais. Os valores podem variar. A contemplação ocorre por sorteio ou lance e não é garantida; esta proposta não representa promessa de contemplação nem de rentabilidade.",
+    prop_aviso: "Simulação estimada, com base nas premissas a seguir e nas escolhas desta reunião. Os valores podem variar e não representam promessa de contemplação nem de rentabilidade.",
     sint_ren_frase: "Rende sobre o crédito, não sobre o que você pagou.",
     sint_ren_t: "Rendimento",
     sint_liq_frase: "Contemplou? Você decide o caminho.",

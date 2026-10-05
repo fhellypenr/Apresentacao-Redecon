@@ -295,7 +295,7 @@
   };
   // Conteúdo de cada bloco: contexto (de onde vem o número), destaque, pares e gráfico
   function bloco(k, n, ctx) {
-    const f = ctx.fmtReal, mes = n.e.mes;
+    const f = v => ctx.fmtReal(v, 2), mes = n.e.mes;
     switch (k) {
       case "comparativo": return {
         contexto: `Imóvel de ${f(n.b.credito)}, com reajustes e contemplação no mês ${mes}`, grafTit: "Total pago pelo mesmo imóvel",
@@ -323,6 +323,17 @@
         pares: [["Aluguel tradicional", f(n.alug) + "/mês"], ...(n.alt ? [[ctx.esc(n.alt.nome), f(n.altV) + "/mês"]] : []), ["Parcela depois de contemplar", f(n.parcPos)]],
         graf: barras([{ r: "Tradicional", v: n.alug }, ...(n.alt ? [{ r: ctx.esc(n.alt.nome), v: n.altV }] : []), { r: "Parcela", v: n.parcPos, cls: "neutra" }], f) };
     }
+  }
+  // Premissas da folha: só as que valem para os blocos escolhidos
+  function premissas(n, marcados, ctx) {
+    const tem = k => marcados.includes(k), pct = ctx.fmtPct;
+    const l = [`contemplação considerada no mês ${n.e.mes}${n.e.modalidade === "embutido" ? ", com lance embutido" : ""}`,
+      `reajuste anual de ${pct(n.b.reajuste)}`];
+    if (tem("comparativo")) l.push(`financiamento ${n.sistema} a ${pct(n.p.fin_taxa_aa, 2)} ao ano + TR, com ${pct(n.p.fin_entrada)} de entrada e ${n.p.fin_prazo} meses; à vista, valor aplicado em CDB líquido de IR`);
+    if (tem("rendendo")) l.push(`crédito aplicado rendendo ${pct(n.p.pct_selic_credito)} da Selic depois de contemplado`);
+    if (tem("venda")) l.push(`venda da carta com ágio de ${pct(n.e.agio)}, comparada às mesmas parcelas aplicadas em CDB líquido de IR`);
+    if (tem("aluguel")) l.push(`aluguel tradicional de ${pct(n.p.aluguel_am, 1)} ao mês${n.alt ? `; ${ctx.esc(n.alt.nome).toLowerCase()} de ${pct(n.alt.taxa_am, 1)} ao mês` : ""}`);
+    return l.join("; ");
   }
   const proposta = {
     id: "proposta", nome: "Proposta direcionada", oculta: true,
@@ -355,10 +366,10 @@
         if (!el.isConnected) { document.removeEventListener("redecon:estado", montar); return; }
         const n = numerosProposta(ctx), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
         const P = PILAR[pilar];
-        // Foco: o primeiro bloco marcado do pilar principal; os demais viram "outros caminhos"
+        // Foco: todos os blocos marcados do pilar principal vêm primeiro e destacados; os demais vêm depois
         const marcados = Object.keys(BLOCOS).filter(k => blocos.has(k));
-        const focoK = marcados.find(k => BLOCOS[k].pilar === pilar) || null;
-        const outros = marcados.filter(k => k !== focoK);
+        const ehDoFoco = k => BLOCOS[k].pilar === pilar;
+        const ordem = [...marcados.filter(ehDoFoco), ...marcados.filter(k => !ehDoFoco(k))];
         const fun = ctx.D.funil || [];
         el.querySelector('[data-alvo="folha"]').innerHTML = `
           <header class="pf-topo">
@@ -373,7 +384,7 @@
           <div class="pf-bloco">
             <p class="pf-sec"><b>1</b> Seu plano</p>
             <div class="pf-plano3">
-              <div><span>Crédito</span><strong>${f(n.b.credito)}</strong></div>
+              <div><span>Crédito</span><strong>${f(n.b.credito, 2)}</strong></div>
               <div><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
               <div class="pf-plano-sim"><span>Sem entrada · sem juros</span><small>Cenário: contemplação no mês ${n.e.mes}</small></div>
             </div>
@@ -381,18 +392,16 @@
 
           ${marcados.length ? `<div class="pf-bloco">
             <p class="pf-sec"><b>2</b> O que o seu crédito pode fazer</p>
-            <div class="pf-cards">${[focoK, ...outros].filter(Boolean).map(k => {
-              const x = bloco(k, n, ctx), B = BLOCOS[k], ehFoco = k === focoK;
+            <div class="pf-cards">${ordem.map(k => {
+              const x = bloco(k, n, ctx), B = BLOCOS[k], ehFoco = ehDoFoco(k);
               return `<section class="pf-card${ehFoco ? " foco" : ""}">
                 <header class="pf-card-topo">
                   ${icone(B.ico)}<div class="pf-card-nome"><small>${PILAR[B.pilar].nome}${ehFoco ? " · foco do cliente" : ""}</small><strong>${B.nome}</strong></div>
                   <p class="pf-card-ctx">${x.contexto}</p>
                 </header>
+                <div class="pf-destaque"><strong class="pf-grande">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span></div>
                 <div class="pf-card-grade">
-                  <div>
-                    <strong class="pf-grande">${x.destaque}</strong><span class="pf-legenda">${x.dLeg}</span>
-                    <div class="pf-apoio">${x.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
-                  </div>
+                  <div class="pf-apoio">${x.pares.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
                   <div class="pf-foco-dir"><p class="pf-graf-tit">${x.grafTit}</p>${x.graf}</div>
                 </div>
               </section>`; }).join("")}</div>
@@ -407,7 +416,7 @@
           </div>` : ""}
           </div>
           <div class="pf-fim">
-          <p class="pf-aviso">${ctx.T("prop_aviso")} Premissas: contemplação no mês ${n.e.mes} por ${n.e.modalidade === "embutido" ? "lance embutido" : "sorteio"}; reajuste de ${ctx.fmtPct(n.b.reajuste)} ao ano; crédito aplicado rendendo ${ctx.fmtPct(n.p.pct_selic_credito)} da Selic; financiamento ${n.sistema} a ${ctx.fmtPct(n.p.fin_taxa_aa, 2)} ao ano + TR.</p>
+          <p class="pf-aviso">${ctx.T("prop_aviso")} Premissas: ${premissas(n, marcados, ctx)}.</p>
           <footer class="pf-rodape">
             <span>Proposta válida até <strong>${validade()}</strong></span>
             <span>${ii("ct_telefone")} · ${ii("ct_instagram")} · ${ii("ct_site")}</span>

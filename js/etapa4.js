@@ -308,26 +308,25 @@
     const f = v => ctx.fmtReal(v, 2), mes = n.e.mes;
     switch (k) {
       case "comparativo": return {
-        frase: "O mesmo imóvel, sem entrada e sem juros: a diferença no total pago é grande.",
+        frase: ["O mesmo imóvel, sem entrada e sem juros:", "a diferença no total pago é grande."],
         visual: miniBarras([{ r: "Financiamento", sub: `${n.p.fin_prazo} meses`, v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", sub: `${n.b.prazo} meses`, v: n.cmp.total }]),
         num: `Diferença estimada de <b>${f(n.cmp.economia)}</b> no total pago, contemplando no mês ${mes}.` };
       case "reajuste": return {
-        frase: "Mesmo antes da contemplação, o seu crédito é reajustado todo ano.",
+        frase: ["Mesmo antes da contemplação,", "o seu crédito é reajustado todo ano."],
         visual: miniColunas([{ r: "Hoje", v: n.b.credito }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }]),
         num: `Em 5 anos, crédito de <b>${f(n.credAno(5))}</b>; a parcela acompanha na mesma proporção (${f(n.parcAno(5))}).` };
       case "rendendo": return {
-        frase: "Depois de contemplado, você não é obrigado a usar o crédito: ele fica rendendo sobre o valor total.",
+        frase: ["Contemplado, você não é obrigado a usar o crédito:", "ele fica rendendo sobre o valor total."],
         visual: miniBarras([{ r: "Rendimento", sub: "por mês", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
         num: `Contemplando no mês ${mes}, cerca de <b>${f(n.rende1)}</b> de rendimento no 1º mês, com a Selic de hoje.` };
       case "venda": return {
-        frase: n.venda.lucro > n.cdb.ganho ? "Liberdade para vender a carta contemplada, com ganho acima de uma aplicação tradicional." : "Liberdade para vender a carta contemplada, se for o melhor caminho no momento.",
+        frase: ["Liberdade para vender a carta contemplada,", n.venda.lucro > n.cdb.ganho ? "com ganho acima de uma aplicação tradicional." : "se for o melhor caminho no momento."],
         visual: miniBarras([{ r: "Venda da carta", v: n.venda.lucro }, { r: "Aplicação", sub: "mesmas parcelas", v: n.cdb.ganho, cls: "neutra" }]),
         num: `Ganho estimado de <b>${f(n.venda.lucro)}</b> na venda, contra ${f(n.cdb.ganho)} das mesmas parcelas aplicadas.` };
       default: {
         const melhor = n.alt && n.altV > n.alug ? { nome: ctx.esc(n.alt.nome).toLowerCase(), v: n.altV } : { nome: "aluguel tradicional", v: n.alug };
         return {
-          frase: melhor.v >= n.parcPos ? "O imóvel trabalha para você: aumenta o seu patrimônio e o aluguel pode pagar a parcela integralmente."
-            : "O imóvel trabalha para você: aumenta o seu patrimônio e gera uma renda que ajuda a pagar a parcela.",
+          frase: ["O imóvel trabalha para você e aumenta o seu patrimônio:", melhor.v >= n.parcPos ? "o aluguel pode pagar a parcela inteira." : "o aluguel ajuda a pagar a parcela."],
           visual: miniBarras([{ r: "Aluguel", v: melhor.v }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
           num: `Com ${melhor.nome}, cerca de <b>${f(melhor.v)}/mês</b>, para uma parcela de ${f(n.parcPos)}.` };
       }
@@ -420,7 +419,7 @@
               const x = bloco(k, n, ctx), B = BLOCOS[k], ehFoco = ehDoFoco(k);
               return `<section class="pf-op${ehFoco ? " foco" : ""}">
                 <header>${icone(B.ico)}<div><small>${PILAR[B.pilar].nome}${ehFoco ? " · foco do cliente" : ""}</small><strong>${B.nome}</strong></div></header>
-                <div class="pf-op-corpo"><p class="pf-op-frase">${x.frase}</p>${x.visual}</div>
+                <div class="pf-op-corpo"><p class="pf-op-frase"><span>${x.frase[0]}</span><span>${x.frase[1]}</span></p>${x.visual}</div>
                 <p class="pf-op-num">${x.num}</p>
               </section>`; }).join("")}</div>
           </div>` : ""}

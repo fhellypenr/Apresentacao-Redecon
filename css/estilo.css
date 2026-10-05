@@ -1035,3 +1035,9 @@ p, li, h1, h2, h3, h4, span, small, strong, label, dd, dt { text-wrap: pretty; }
 .pf-comp .pf-indica-mini { grid-column: 1 / -1; padding: 7px 14px; border-radius: 10px; gap: 10px; }
 .pf-indica-mini strong { font-size: .82em; }
 .pf-indica-mini p { font-size: .8em; }
+
+/* Frases dos cards da proposta em duas partes, sem palavra sobrando na linha */
+.pf-op-frase { font-size: .8em; }
+.pf-op-frase span { display: block; text-wrap: balance; }
+.pf-op-frase span:first-child { font-weight: 700; color: #101F3D; }
+.pf-op-num { text-wrap: balance; }

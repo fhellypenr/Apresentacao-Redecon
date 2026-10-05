@@ -30,7 +30,8 @@
   };
   const pctTxt = (v, casas = 1) => (v * 100).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas }) + "%";
   const alturaGraf = () => Math.round(Math.min(520, Math.max(220, window.innerHeight * (window.innerHeight < 860 ? 0.27 : 0.30))));
-  const lerMoeda = s => Number(String(s).replace(/\D/g, "")) || 0;
+  const lerMoeda = s => Moeda.ler(s);
+  const fmtCampo = v => Moeda.formatar(v);
   const dolar = ctx => (ctx.D.indices.dolar && ctx.D.indices.dolar.valor) || ctx.D.parametros.dolar_reserva || 5.2;
 
   // Consórcio × financiamento do mesmo valor. Usado no comparativo e no fechamento.
@@ -50,7 +51,7 @@
     const e = ctx.estado, f = ctx.fmtReal;
     const opPrazos = ctx.D.prazos.map(x => `<option value="${x.prazo}" ${+x.prazo === +e.prazo ? "selected" : ""}>${x.prazo} meses</option>`).join("");
     const partes = {
-      credito: `<label class="ctl"><span>Crédito</span><input data-ctl="credito" inputmode="numeric" value="${f(e.credito)}"></label>`,
+      credito: `<label class="ctl ctl-rs"><span>Crédito (R$)</span><input data-ctl="credito" class="campo-moeda" inputmode="decimal" value="${fmtCampo(e.credito)}"></label>`,
       prazo: `<label class="ctl"><span>Prazo</span><select data-ctl="prazo">${opPrazos}</select></label>`,
       parcela: `<div class="ctl"><span>Parcela</span><div class="seg" role="group">
         <button data-ctl="meia" data-v="1" aria-pressed="${e.meia}">Meia</button><button data-ctl="meia" data-v="0" aria-pressed="${!e.meia}">Cheia</button></div></div>`,
@@ -66,7 +67,7 @@
       const k = c.dataset.ctl;
       const aplicar = () => {
         const e = ctx.estado;
-        if (k === "credito") { const v = lerMoeda(c.value); if (v > 0) e.credito = v; c.value = ctx.fmtReal(e.credito); }
+        if (k === "credito") { const v = lerMoeda(c.value); if (v > 0) e.credito = v; c.value = fmtCampo(e.credito); }
         if (k === "prazo") { e.prazo = +c.value; e.mes = Math.min(e.mes, e.prazo - 1); }
         if (k === "meia") e.meia = c.dataset.v === "1";
         if (k === "modalidade") e.modalidade = c.dataset.v;
@@ -82,7 +83,7 @@
     const e = ctx.estado;
     el.querySelectorAll("[data-ctl]").forEach(c => {
       const k = c.dataset.ctl;
-      if (k === "credito" && document.activeElement !== c) c.value = ctx.fmtReal(e.credito);
+      if (k === "credito" && document.activeElement !== c) c.value = fmtCampo(e.credito);
       if (k === "prazo") c.value = e.prazo;
       if (k === "mes" && document.activeElement !== c) { c.value = e.mes; c.max = e.prazo - 1; }
       if (k === "agio" && document.activeElement !== c) c.value = Math.round(e.agio * 100);
@@ -468,7 +469,7 @@
         if (alt) {
           const v = valoresDe(alt), ev = porEvento(alt);
           const campos = ev
-            ? `<label>Valor por evento (R$) <input data-fv="valor" type="number" min="0" step="100" inputmode="numeric" placeholder="digite" value="${v.valor}"></label>
+            ? `<label>Valor por evento (R$) <input data-fv="valor" class="campo-moeda" inputmode="decimal" placeholder="digite" value="${v.valor === "" ? "" : fmtCampo(v.valor)}"></label>
                <label>Eventos por mês <input data-fv="qtd" type="number" min="0" step="1" inputmode="numeric" value="${v.qtd}"></label>`
             : `<label>Aluguel (% ao mês do investido) <input data-fv="pct" type="number" min="0" step="0.1" inputmode="decimal" value="${v.pct}"></label>`;
           caixa = `<div class="fora-caixa opcao-destaque">
@@ -490,7 +491,9 @@
             <p class="resultado ${ganho >= parc ? "positivo" : ""}">${cobre(ganho)}</p>`;
         };
         box.querySelectorAll("[data-fv]").forEach(i => i.addEventListener("input", () => {
-          const v = valoresDe(alt); v[i.dataset.fv] = i.value === "" ? "" : Math.max(0, +i.value); resultado();
+          const v = valoresDe(alt);
+          v[i.dataset.fv] = i.value === "" ? "" : Math.max(0, i.classList.contains("campo-moeda") ? lerMoeda(i.value) : +i.value.replace(",", "."));
+          resultado();
         }));
         resultado();
         box.querySelectorAll("[data-fora]").forEach(b => b.addEventListener("click", () => {
@@ -524,7 +527,7 @@
             <h3>Short stay (Airbnb e similares)</h3>
             <div class="st-campos">
               <label>Cidade <select data-st="cidade">${opCid}</select></label>
-              <label>Diária (R$) <input data-st="diaria" type="number" min="0" step="10" inputmode="numeric" placeholder="digite" value="${st.diaria}"></label>
+              <label>Diária (R$) <input data-st="diaria" class="campo-moeda" inputmode="decimal" placeholder="digite" value="${st.diaria === "" ? "" : fmtCampo(st.diaria)}"></label>
               <label>Ocupação (%) <input data-st="ocupacao" type="number" min="0" max="100" step="1" inputmode="numeric" value="${st.ocupacao}"></label>
             </div>
             <div data-alvo="res-st"></div>
@@ -536,9 +539,9 @@
           i.addEventListener(k === "cidade" ? "change" : "input", () => {
             if (k === "cidade") {
               st.cidade = i.value; aplicarCidade();
-              el.querySelector('[data-st="diaria"]').value = st.diaria;
+              el.querySelector('[data-st="diaria"]').value = st.diaria === "" ? "" : fmtCampo(st.diaria);
             } else if (k === "diaria") {
-              st.diaria = i.value === "" ? "" : Math.max(0, +i.value);
+              st.diaria = i.value === "" ? "" : Math.max(0, lerMoeda(i.value));
               if (st.cidade !== OUTRA) { st.cidade = OUTRA; el.querySelector('[data-st="cidade"]').value = OUTRA; }
             } else {
               const v = +i.value; if (i.value !== "" && v >= 0 && v <= 100) st.ocupacao = v;

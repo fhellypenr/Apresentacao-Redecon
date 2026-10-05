@@ -140,7 +140,7 @@
       <div class="controles">
         <div class="ctl"><span>Calcular pela</span><div class="seg" role="group">
           <button data-modo="parcela" aria-pressed="false">Parcela</button><button data-modo="credito" aria-pressed="true">Crédito</button></div></div>
-        <label class="ctl" data-campo="parcela" hidden><span>Parcela que cabe no mês</span><input data-f="parcela" inputmode="numeric"></label>
+        <label class="ctl" data-campo="parcela" hidden><span>Parcela que cabe no mês (R$)</span><input data-f="parcela" class="campo-moeda" inputmode="decimal"></label>
         ${ctl}
       </div>
       <div class="plano" data-alvo="plano"></div>
@@ -156,11 +156,11 @@
       const aplicarModo = () => {
         el.querySelectorAll("[data-modo]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.modo === modo)));
         campoParc.hidden = modo !== "parcela"; campoCred.hidden = modo === "parcela";
-        if (modo === "parcela") { parcelaDesejada = parcelaAtual(); inParc.value = ctx.fmtReal(parcelaDesejada, 2); }
+        if (modo === "parcela") { parcelaDesejada = parcelaAtual(); inParc.value = Moeda.formatar(parcelaDesejada); }
       };
       el.querySelectorAll("[data-modo]").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; aplicarModo(); }));
       inParc.addEventListener("change", () => {
-        const v = Number(String(inParc.value).replace(/[^\d,]/g, "").replace(",", ".")) || 0;
+        const v = Moeda.ler(inParc.value);
         if (v > 0) { parcelaDesejada = v; ctx.mudou(); }
       });
       H.reagir(el, ctx, () => {
@@ -169,7 +169,7 @@
         if (modo === "parcela" && parcelaDesejada) {
           const b0 = H.base(ctx);
           e.credito = Math.round(Motor.creditoPelaParcela({ valorParcela: parcelaDesejada, prazo: b0.prazo, taxaTotal: b0.taxaTotal, meia: b0.meia }));
-          if (document.activeElement !== inParc) inParc.value = ctx.fmtReal(parcelaDesejada, 2);
+          if (document.activeElement !== inParc) inParc.value = Moeda.formatar(parcelaDesejada);
         }
         const b = H.base(ctx), p = b.p, V = b.credito;
         const cli = ctx.ajustes.cliente;

@@ -450,22 +450,49 @@
       let ultimo = null;
       let foraSel = null; // opção "fora do tradicional" aberta (nome) ou nenhuma
       const alternativas = () => (ctx.D.alternativas && ctx.D.alternativas.length ? ctx.D.alternativas : (window.DADOS_PADRAO.alternativas || []));
+      // Valores editáveis de cada opção (começam pelos da planilha e ficam durante a reunião)
+      const editados = {};
+      const valoresDe = alt => {
+        if (!editados[alt.nome]) editados[alt.nome] = {
+          pct: Math.round((alt.taxa_am || 0.01) * 1000) / 10,
+          valor: alt.valor_evento || "", qtd: alt.eventos_mes || 4
+        };
+        return editados[alt.nome];
+      };
+      const porEvento = alt => /evento/i.test(alt.tipo || "") || (!alt.tipo && /evento/i.test(alt.nome));
       const desenharFora = () => {
         const f = ctx.fmtReal, { V, parc, cobre } = ultimo, alts = alternativas();
         const alt = alts.find(a => a.nome === foraSel);
         const botoes = alts.map(a => `<button data-fora="${ctx.esc(a.nome)}" aria-pressed="${a.nome === foraSel}">${ctx.esc(a.nome)}</button>`).join("");
         let caixa = "";
         if (alt) {
-          const ganho = Motor.aluguelTradicional({ valorImovel: V, taxaAm: alt.taxa_am });
+          const v = valoresDe(alt), ev = porEvento(alt);
+          const campos = ev
+            ? `<label>Valor por evento (R$) <input data-fv="valor" type="number" min="0" step="100" inputmode="numeric" placeholder="digite" value="${v.valor}"></label>
+               <label>Eventos por mês <input data-fv="qtd" type="number" min="0" step="1" inputmode="numeric" value="${v.qtd}"></label>`
+            : `<label>Aluguel (% ao mês do investido) <input data-fv="pct" type="number" min="0" step="0.1" inputmode="decimal" value="${v.pct}"></label>`;
           caixa = `<div class="fora-caixa opcao-destaque">
-            ${numero(`Aluguel por mês (${ctx.fmtPct(alt.taxa_am, 1)} do investido)`, f(ganho))}
-            <p class="resultado ${ganho >= parc ? "positivo" : ""}">${cobre(ganho)}</p>
+            <div class="fora-campos st-campos">${campos}</div>
+            <div class="fora-res" data-alvo="fora-res"></div>
             ${alt.obs ? `<p class="fora-obs">${ctx.esc(alt.obs)}</p>` : ""}
           </div>`;
         }
         const box = el.querySelector('[data-alvo="fora"]');
         box.innerHTML = `<div class="fora-topo"><span class="opcao-selo">Fora do tradicional</span><div class="seg" role="group">${botoes}</div>
           ${alt ? "" : `<span class="fora-dica">escolha uma opção para ver o cálculo</span>`}</div>${caixa}`;
+        const resultado = () => {
+          const res = box.querySelector('[data-alvo="fora-res"]');
+          if (!res || !alt) return;
+          const v = valoresDe(alt), ev = porEvento(alt);
+          const ganho = ev ? (+v.valor || 0) * (+v.qtd || 0) : V * (+v.pct || 0) / 100;
+          if (ev && !(+v.valor > 0)) { res.innerHTML = `<p class="fora-dica">Digite o valor médio cobrado por evento (formaturas, casamentos, festas).</p>`; return; }
+          res.innerHTML = `${numero(ev ? `Receita por mês (${v.qtd} evento${+v.qtd === 1 ? "" : "s"})` : `Aluguel por mês (${String(v.pct).replace(".", ",")}% do investido)`, f(ganho), ev ? "valor bruto, antes de custos" : "")}
+            <p class="resultado ${ganho >= parc ? "positivo" : ""}">${cobre(ganho)}</p>`;
+        };
+        box.querySelectorAll("[data-fv]").forEach(i => i.addEventListener("input", () => {
+          const v = valoresDe(alt); v[i.dataset.fv] = i.value === "" ? "" : Math.max(0, +i.value); resultado();
+        }));
+        resultado();
         box.querySelectorAll("[data-fora]").forEach(b => b.addEventListener("click", () => {
           foraSel = foraSel === b.dataset.fora ? null : b.dataset.fora;
           desenharFora();

@@ -57,7 +57,6 @@
     const cliente = ajustes.cliente ? `<div><span>Preparado para</span><strong>${esc(ajustes.cliente)}</strong></div>` : "";
     const apres = ajustes.apresentador ? `<div><span>Apresentado por</span><strong>${esc(ajustes.apresentador)}</strong></div>` : "";
     return `
-      <canvas class="capa-rede" aria-hidden="true"></canvas>
       <img class="capa-logo" src="img/logo-negativo.png" alt="Redecon Consórcios">
       <div class="capa-meio">
         <h1>${T("capa_titulo").split(" ").map((w, i) => `<span class="palavra" style="--k:${i}">${w}</span>`).join(" ")}</h1>
@@ -200,7 +199,7 @@
     const E = window.ETAPA4 || {};
     const casosOk = D.casos && D.casos.length;
     return [
-      { nome: "Abertura", telas: [{ id: "capa", nome: "Capa", classe: "capa", html: telaCapa, iniciar: iniciarCapa }] },
+      { nome: "Abertura", telas: [{ id: "capa", nome: "Capa", classe: "capa", html: telaCapa }] },
       { nome: "Quem somos", telas: [E.quemRedecon, E.quemHs].filter(Boolean).map(comCtx) },
       { nome: "Virada de chave", telas: [E.virada].filter(Boolean).map(comCtx) },
       { nome: "Método API", telas: [E.mapa].filter(Boolean).map(comCtx) },
@@ -220,20 +219,24 @@
   let ROTEIRO = [], SECOES = [], LISTA = [];
   let atual = 0;
 
-  // ---------- Capa: rede de conexões viva (Redecon = rede) ----------
-  // Pontos que se movem e se ligam quando se aproximam; reagem ao toque/mouse.
-  function iniciarCapa(el) {
-    const cv = $(".capa-rede", el), g = cv.getContext("2d");
-    let W = 0, H = 0, dpr = 1, pts = [], quadro = null, mouse = null;
+  // ---------- Fundo: rede de conexões viva (Redecon = rede) ----------
+  // Um único canvas atrás de todas as telas. Pontos que se movem e se ligam; reagem ao mouse ou ao toque.
+  // Nas telas de cálculo ele fica bem suave para não competir com os números.
+  const TELAS_FUNDO_FORTE = ["capa", "quem-redecon", "quem-hs", "virada", "mapa-api", "sintese", "regras", "otimizar", "compromisso", "encerramento"];
+  function iniciarFundo() {
+    const cv = document.getElementById("fundo-rede");
+    if (!cv) return;
+    const g = cv.getContext("2d");
+    let W = 0, H = 0, dpr = 1, pts = [], mouse = null;
     function medir() {
       dpr = Math.min(2, window.devicePixelRatio || 1);
-      W = el.clientWidth; H = el.clientHeight;
+      W = window.innerWidth; H = window.innerHeight;
       cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px";
-      const n = Math.round(Math.min(110, Math.max(40, W * H / 16000)));
-      pts = Array.from({ length: n }, (_, i) => ({
+      const n = Math.round(Math.min(100, Math.max(36, W * H / 18000)));
+      pts = Array.from({ length: n }, () => ({
         x: Math.random() * W, y: Math.random() * H,
-        vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35,
-        r: Math.random() < .12 ? 3.2 : 1.8, quente: Math.random() < .18
+        vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3,
+        r: Math.random() < .12 ? 3 : 1.7, quente: Math.random() < .18
       }));
     }
     function passo() {
@@ -244,7 +247,7 @@
         if (animado()) { p.x += p.vx; p.y += p.vy; }
         if (p.x < 0 || p.x > W) p.vx *= -1;
         if (p.y < 0 || p.y > H) p.vy *= -1;
-        if (mouse) { const dx = mouse.x - p.x, dy = mouse.y - p.y, d = Math.hypot(dx, dy); if (d < 180 && d > 1) { p.x += dx / d * .6; p.y += dy / d * .6; } }
+        if (mouse && animado()) { const dx = mouse.x - p.x, dy = mouse.y - p.y, d = Math.hypot(dx, dy); if (d < 180 && d > 1) { p.x += dx / d * .5; p.y += dy / d * .5; } }
       }
       for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
         const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -258,13 +261,13 @@
         g.fillStyle = p.quente ? "rgba(248,68,52,.9)" : "rgba(183,195,220,.55)";
         g.beginPath(); g.arc(p.x, p.y, p.r, 0, Math.PI * 2); g.fill();
       }
-      quadro = el.isConnected ? requestAnimationFrame(passo) : null;
+      requestAnimationFrame(passo);
     }
-    el.addEventListener("pointermove", e => { const r = el.getBoundingClientRect(); mouse = { x: e.clientX - r.left, y: e.clientY - r.top }; });
-    el.addEventListener("pointerleave", () => { mouse = null; });
-    window.addEventListener("resize", () => { if (el.isConnected) medir(); });
-    el._reiniciar = () => { medir(); cancelAnimationFrame(quadro); quadro = requestAnimationFrame(passo); };
-    el._sair = () => { cancelAnimationFrame(quadro); quadro = null; };
+    window.addEventListener("pointermove", e => { mouse = { x: e.clientX, y: e.clientY }; });
+    window.addEventListener("pointerleave", () => { mouse = null; });
+    let tR = null;
+    window.addEventListener("resize", () => { clearTimeout(tR); tR = setTimeout(medir, 200); });
+    medir(); requestAnimationFrame(passo);
   }
 
   // ---------- Funil 3D ----------
@@ -458,6 +461,7 @@
     const antes = atual;
     atual = i;
     document.documentElement.style.setProperty("--dir", i >= antes ? 1 : -1);
+    document.body.dataset.fundo = TELAS_FUNDO_FORTE.includes(LISTA[i].id) ? "forte" : "leve";
     $$(".slide").forEach(s => s.classList.toggle("ativo", +s.dataset.i === i));
     const anterior = $(`.slide[data-i="${antes}"]`);
     if (anterior && anterior._sair && antes !== i) anterior._sair();
@@ -516,6 +520,7 @@
   // ---------- Início ----------
   async function iniciar() {
     D = await Dados.carregar();
+    iniciarFundo();
     montarAjustes();
     montar();
     const pelaUrl = LISTA.findIndex(t => t.id === location.hash.slice(1));

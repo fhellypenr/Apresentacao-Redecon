@@ -185,7 +185,7 @@
         const c = sc.contemplacao, rende1 = c.creditoDisponivel * b.rendAm, pPos = sc.parcelaPosInicial;
         const venda = Motor.vendaCarta({ creditoDisponivel: c.creditoDisponivel, pagoAteContemplar: c.pagoTotal, agio: e.agio });
         const alug = c.creditoDisponivel * p.aluguel_am;
-        const alt = (ctx.D.alternativas && ctx.D.alternativas[0]) || (DADOS_PADRAO.alternativas || [])[0];
+        const alt = ((ctx.D.alternativas && ctx.D.alternativas.length ? ctx.D.alternativas : DADOS_PADRAO.alternativas) || []).find(a => a.taxa_am > 0);
         const altV = alt ? c.creditoDisponivel * alt.taxa_am : 0;
         const card = (selo, corpo, cls = "") => `<div class="plano-card ${cls}"><span class="opcao-selo">${selo}</span>${corpo}</div>`;
         const contemp = `contemplado no mês ${e.mes}${e.modalidade === "embutido" ? ", com lance embutido" : ""}`;
@@ -222,100 +222,163 @@
 
   // ---------- Encerramento ----------
   // ---------- Proposta direcionada ----------
-  // O apresentador marca o objetivo e o que entra; a proposta se monta ao lado e vira PDF.
+  // Um objetivo principal define o foco (números grandes + gráfico); os demais entram como "também possível".
   // Nada fica salvo: o PDF é gerado no próprio aparelho.
-  const OBJETIVOS = ["Comprar ou construir", "Fazer o crédito render", "Vender a carta contemplada", "Gerar renda com aluguel", "Poupar com disciplina"];
-  const ITENS = [
-    ["economia", "Economia em relação ao financiamento"],
-    ["estrategia", "Estratégia de contemplação"],
-    ["rende", "Crédito rendendo após contemplar"],
-    ["venda", "Venda da carta contemplada"],
-    ["aluguel", "Renda com aluguel"],
-    ["reajuste", "Crédito reajustado em 5 anos"]
+  const OBJ = [
+    { k: "comprar", nome: "Comprar ou construir", ico: "casa" },
+    { k: "quitar", nome: "Quitar financiamento", ico: "escudo" },
+    { k: "render", nome: "Fazer o crédito render", ico: "rende" },
+    { k: "vender", nome: "Vender a carta", ico: "venda" },
+    { k: "aluguel", nome: "Renda com aluguel", ico: "aluguel" },
+    { k: "poupar", nome: "Poupar com disciplina", ico: "grafico" }
   ];
   function validade(hoje = new Date()) {
     const d = hoje.getDate(), m = hoje.getMonth(), a = hoje.getFullYear();
     const alvo = d <= 10 ? new Date(a, m, 10) : d <= 25 ? new Date(a, m, 25) : new Date(a, m + 1, 10);
     return alvo.toLocaleDateString("pt-BR");
   }
+  // Todos os números da proposta, a partir do plano ("O seu plano")
+  function numerosProposta(ctx) {
+    const H = A(), e = ctx.estado, b = H.base(ctx), p = b.p;
+    const parc = Motor.parcela({ credito: b.credito, prazo: b.prazo, taxaTotal: b.taxaTotal, meia: b.meia });
+    const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
+    const c = sc.contemplacao, cred = c.creditoDisponivel;
+    const cmp = H.compararFinanciamento(b, { mes: e.mes, comReaj: true, sistema: e.sistema || "Price" });
+    const venda = Motor.vendaCarta({ creditoDisponivel: cred, pagoAteContemplar: c.pagoTotal, agio: e.agio });
+    const parcelas = sc.meses.filter(x => x.mes <= e.mes).map(x => x.parcela);
+    const cdb = Motor.aplicarAportes({ aportes: parcelas.map((valor, k) => ({ mes: k + 1, valor })), mesFinal: e.mes, taxaAa: b.cdbAa, tabelaIR: b.ir });
+    const alts = (ctx.D.alternativas && ctx.D.alternativas.length ? ctx.D.alternativas : DADOS_PADRAO.alternativas) || [];
+    const alt = alts.find(a => a.taxa_am > 0);
+    const s0 = H.cota(b, { modalidade: "nenhuma" });
+    const credAno = anos => s0.meses[Math.min(anos * 12 + 1, b.prazo) - 1].creditoAtual;
+    const f4 = (ctx.D.funil || []).slice().sort((x, y) => x.concorrencia - y.concorrencia)[0];
+    return { b, e, p, parc, sc, c, cred, cmp, venda, cdb, alt, credAno, f4,
+      rende1: cred * b.rendAm, parcPos: sc.parcelaPosInicial, fimGrupo: sc.meses[sc.meses.length - 1].creditoDisponivel,
+      alug: cred * p.aluguel_am, altV: alt ? cred * alt.taxa_am : 0, sistema: e.sistema || "Price" };
+  }
+  // Barras horizontais simples (funcionam na tela e no PDF)
+  const barras = (itens, f) => {
+    const max = Math.max(...itens.map(i => Math.abs(i.v)), 1);
+    return `<div class="pf-barras">${itens.map(i => `
+      <div class="pf-barra"><span>${i.r}</span><div class="pf-trilho"><i class="${i.cls || ""}" style="width:${Math.max(3, Math.abs(i.v) / max * 100).toFixed(1)}%"></i></div><strong>${f(i.v)}</strong></div>`).join("")}</div>`;
+  };
+  // Foco de cada objetivo: destaque principal, apoio e gráfico
+  function focoProposta(k, n, ctx) {
+    const f = ctx.fmtReal, mc = `contemplado no mês ${n.e.mes}`;
+    switch (k) {
+      case "comprar": case "quitar": return {
+        grande: f(n.cmp.economia), legenda: k === "quitar" ? "a menos que manter um financiamento do mesmo valor" : "a menos que financiar o mesmo valor",
+        apoio: [["Entrada", "Sem entrada"], ["Juros", "Sem juros"], ["Entrada do financiamento", f(n.cmp.fin.valorEntrada)]],
+        graf: barras([{ r: "Financiamento", v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", v: n.cmp.total }], f),
+        nota: `Total pago no fim, já com reajustes, ${mc}.` };
+      case "render": return {
+        grande: f(n.rende1), legenda: `de rendimento no 1º mês, ${mc}`,
+        apoio: [["Crédito aplicado", f(n.cred)], ["Parcela depois", f(n.parcPos)], ["No fim do grupo", f(n.fimGrupo)]],
+        graf: barras([{ r: "Rendimento", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }], f),
+        nota: "O rendimento é sobre o crédito total, não sobre o valor pago." };
+      case "vender": return {
+        grande: f(n.venda.recebe), legenda: `valor de venda da carta, ${mc}`,
+        apoio: [["Você pagou", f(n.c.pagoTotal)], ["Lucro na venda", f(n.venda.lucro)], ["Mesmas parcelas no CDB", f(n.cdb.ganho)]],
+        graf: barras([{ r: "Lucro na venda", v: n.venda.lucro }, { r: "Ganho no CDB", v: n.cdb.ganho, cls: "neutra" }], f),
+        nota: `Ágio de referência de ${ctx.fmtPct(n.e.agio)} sobre o crédito.` };
+      case "aluguel": return {
+        grande: f(Math.max(n.alug, n.altV)), legenda: `por mês de aluguel estimado${n.altV > n.alug && n.alt ? " (" + ctx.esc(n.alt.nome).toLowerCase() + ")" : ""}`,
+        apoio: [["Aluguel tradicional", f(n.alug)], [n.alt ? ctx.esc(n.alt.nome) : "Fora do tradicional", f(n.altV)], ["Parcela depois", f(n.parcPos)]],
+        graf: barras([{ r: "Tradicional", v: n.alug }, ...(n.alt ? [{ r: ctx.esc(n.alt.nome), v: n.altV }] : []), { r: "Parcela", v: n.parcPos, cls: "neutra" }], f),
+        nota: `Imóvel de ${f(n.cred)}, ${mc}.` };
+      default: return {
+        grande: f(n.credAno(5)), legenda: "de crédito em 5 anos, com o reajuste anual",
+        apoio: [["Crédito hoje", f(n.b.credito)], ["Em 5 anos", f(n.credAno(5))], ["Em 10 anos", f(n.credAno(10))]],
+        graf: barras([{ r: "Hoje", v: n.b.credito, cls: "neutra" }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }], f),
+        nota: `Reajuste de ${ctx.fmtPct(n.b.reajuste)} ao ano enquanto aguarda a contemplação.` };
+    }
+  }
+  // Um número por objetivo, para os quadros "também possível"
+  const extraProposta = (k, n, ctx) => {
+    const f = ctx.fmtReal;
+    return ({
+      comprar: ["Economia vs. financiamento", f(n.cmp.economia)],
+      quitar: ["Economia vs. financiamento", f(n.cmp.economia)],
+      render: ["Rende no 1º mês", f(n.rende1)],
+      vender: ["Venda da carta", f(n.venda.recebe)],
+      aluguel: ["Aluguel estimado", f(Math.max(n.alug, n.altV)) + "/mês"],
+      poupar: ["Crédito em 5 anos", f(n.credAno(5))]
+    })[k];
+  };
   const proposta = {
     id: "proposta", nome: "Proposta direcionada",
     html: ctx => `
       <h2 class="titulo">${ctx.T("prop_titulo")}</h2>
       <div class="prop">
         <div class="prop-escolhas">
-          <p class="prop-rotulo">Objetivo do cliente</p>
-          <div class="prop-chips">${OBJETIVOS.map((o, i) => `<button class="chip-op" data-obj="${i}" aria-pressed="false">${o}</button>`).join("")}</div>
-          <p class="prop-rotulo">O que entra na proposta</p>
-          <div class="prop-itens">${ITENS.map(([k, n]) => `<label class="tela-op"><input type="checkbox" data-item="${k}"> ${n}</label>`).join("")}</div>
+          <p class="prop-rotulo">Objetivo principal</p>
+          <div class="prop-chips">${OBJ.map(o => `<button class="chip-op" data-obj="${o.k}" aria-pressed="false">${o.nome}</button>`).join("")}</div>
+          <p class="prop-rotulo">Também mostrar</p>
+          <div class="prop-chips" data-alvo="extras"></div>
+          <label class="tela-op"><input type="checkbox" data-estrategia checked> Estratégia de contemplação</label>
           <p class="prop-nota">Crédito, parcela e mês de contemplação vêm de "O seu plano".</p>
           <button class="btn btn-pdf" data-acao="pdf">Gerar PDF da proposta</button>
         </div>
         <div class="prop-folha-caixa"><div class="prop-folha" data-alvo="folha"></div></div>
       </div>`,
     iniciar: (el, ctx) => {
-      const H = A(), objs = new Set(), itens = new Set(["economia", "estrategia"]);
-      el.querySelectorAll("[data-item]").forEach(c => { c.checked = itens.has(c.dataset.item); });
+      // Para cada objetivo, o que costuma entrar como "plus" (o apresentador ajusta)
+      const PLUS = { comprar: ["render", "vender", "poupar"], quitar: ["render", "poupar"], render: ["vender", "aluguel"],
+        vender: ["render", "comprar"], aluguel: ["comprar", "render"], poupar: ["comprar", "render"] };
+      let principal = "comprar";
+      const extras = new Set(PLUS.comprar);
+      let estrategia = true;
+      const desenharEscolhas = () => {
+        el.querySelectorAll("[data-obj]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.obj === principal)));
+        el.querySelector('[data-alvo="extras"]').innerHTML = OBJ.filter(o => o.k !== principal && !(principal === "comprar" && o.k === "quitar") && !(principal === "quitar" && o.k === "comprar"))
+          .map(o => `<button class="chip-op chip-mini" data-extra="${o.k}" aria-pressed="${extras.has(o.k)}">${o.nome}</button>`).join("");
+        el.querySelectorAll("[data-extra]").forEach(b => b.addEventListener("click", () => {
+          extras.has(b.dataset.extra) ? extras.delete(b.dataset.extra) : extras.add(b.dataset.extra);
+          desenharEscolhas(); montar();
+        }));
+      };
       const montar = () => {
         if (!el.isConnected) { document.removeEventListener("redecon:estado", montar); return; }
-        const e = ctx.estado, f = ctx.fmtReal, b = H.base(ctx), p = b.p, aj = ctx.ajustes, ii = k => inst(ctx, k);
-        const parc = Motor.parcela({ credito: b.credito, prazo: b.prazo, taxaTotal: b.taxaTotal, meia: b.meia });
-        const sc = H.cota(b, { mesContemplacao: e.mes, modalidade: e.modalidade });
-        const c = sc.contemplacao;
-        const linhas = [];
-        if (itens.has("economia")) {
-          const r = H.compararFinanciamento(b, { mes: e.mes, comReaj: true, sistema: e.sistema || "Price" });
-          if (r.economia > 0) linhas.push(["Economia em relação ao financiamento",
-            `Comparado a um financiamento ${e.sistema || "Price"} do mesmo valor, a simulação indica <strong>${f(r.economia)}</strong> a menos em custo total, já considerando os reajustes e sem entrada.`]);
-        }
-        if (itens.has("estrategia")) {
-          const f4 = (ctx.D.funil || []).slice().sort((x, y) => x.concorrencia - y.concorrencia)[0];
-          linhas.push(["Estratégia de contemplação",
-            `Parcelas pagas em dia liberam as modalidades de fidelidade${f4 ? `; a ${ctx.esc(f4.modalidade)} libera com ${f4.meses} parcelas seguidas em dia (concorrência média histórica de ${ctx.fmtPct(f4.concorrencia)})` : ""}. Lance embutido de até ${ctx.fmtPct(p.lance_embutido)} do crédito, sem tirar dinheiro do bolso.`]);
-        }
-        if (itens.has("rende")) linhas.push(["Crédito rendendo",
-          `Se contemplado no mês ${e.mes}, o crédito aplicado renderia cerca de <strong>${f(c.creditoDisponivel * b.rendAm)}</strong> no primeiro mês, sobre o valor total.`]);
-        if (itens.has("venda")) {
-          const v = Motor.vendaCarta({ creditoDisponivel: c.creditoDisponivel, pagoAteContemplar: c.pagoTotal, agio: e.agio });
-          linhas.push(["Venda da carta contemplada",
-            `Se contemplado no mês ${e.mes}, a carta poderia ser negociada por cerca de <strong>${f(v.recebe)}</strong> (ágio de referência de ${ctx.fmtPct(e.agio)}).`]);
-        }
-        if (itens.has("aluguel")) {
-          const alt = (ctx.D.alternativas && ctx.D.alternativas[0]) || (DADOS_PADRAO.alternativas || [])[0];
-          linhas.push(["Renda com aluguel",
-            `Com o crédito em um imóvel, o aluguel tradicional estimado é de <strong>${f(c.creditoDisponivel * p.aluguel_am)}</strong> por mês${alt ? `; em ${ctx.esc(alt.nome).toLowerCase()}, cerca de <strong>${f(c.creditoDisponivel * alt.taxa_am)}</strong> por mês` : ""}.`]);
-        }
-        if (itens.has("reajuste")) {
-          const s0 = H.cota(b, { modalidade: "nenhuma" }), m5 = Math.min(61, b.prazo);
-          linhas.push(["Crédito reajustado",
-            `Com o reajuste anual de ${ctx.fmtPct(b.reajuste)}, o crédito chegaria a <strong>${f(s0.meses[m5 - 1].creditoAtual)}</strong> em ${Math.floor((m5 - 1) / 12)} anos, enquanto aguarda a contemplação.`]);
-        }
-        const hoje = new Date().toLocaleDateString("pt-BR");
+        const n = numerosProposta(ctx), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
+        const obj = OBJ.find(o => o.k === principal), foco = focoProposta(principal, n, ctx);
+        const lista = [...extras].filter(k => k !== principal && !(principal === "comprar" && k === "quitar") && !(principal === "quitar" && k === "comprar"));
+        const cols = lista.length <= 3 ? Math.max(1, lista.length) : lista.length === 4 ? 2 : 3;
+        const fun = ctx.D.funil || [];
         el.querySelector('[data-alvo="folha"]').innerHTML = `
           <header class="pf-topo">
             <img src="img/logo-positivo.png" alt="Redecon Consórcios">
-            <div><strong>${ctx.T("prop_titulo")}</strong><span>${hoje}${aj.apresentador ? " · " + ctx.esc(aj.apresentador) : ""}</span></div>
+            <div><strong>${ctx.T("prop_titulo")}</strong><span>${new Date().toLocaleDateString("pt-BR")}${aj.apresentador ? " · " + ctx.esc(aj.apresentador) : ""}</span></div>
           </header>
-          <p class="pf-cliente">${aj.cliente ? "Preparada para <strong>" + ctx.esc(aj.cliente) + "</strong>" : "Preparada para você"}</p>
-          <div class="pf-plano">
-            <div><span>Crédito</span><strong>${f(b.credito)}</strong></div>
-            <div><span>${b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(parc, 2)}</strong></div>
+          <div class="pf-faixa">
+            <div class="pf-cli">${aj.cliente ? ctx.esc(aj.cliente) : "Seu plano"}<span>Objetivo: <strong>${obj.nome}</strong></span></div>
+            <div class="pf-kpi"><span>Crédito</span><strong>${f(n.b.credito)}</strong></div>
+            <div class="pf-kpi"><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
           </div>
-          <p class="pf-selo">Sem entrada · sem juros</p>
-          ${objs.size ? `<p class="pf-sec">Seu objetivo</p><p class="pf-obj">${[...objs].sort().map(i => OBJETIVOS[i]).join(" · ")}</p>` : ""}
-          ${linhas.length ? `<p class="pf-sec">O que esse plano pode fazer por você</p>${linhas.map(([t, x]) => `<div class="pf-item"><strong>${t}</strong><p>${x}</p></div>`).join("")}` : ""}
-          <div class="pf-prox"><strong>${ctx.T("fech_proximo_t")}</strong> ${ctx.T("fech_proximo")}</div>
-          <p class="pf-aviso">${ctx.T("prop_aviso")}</p>
+          <section class="pf-foco">
+            <div class="pf-foco-esq">
+              <div class="pf-foco-tit">${icone(obj.ico)}<span>${obj.nome}</span></div>
+              <strong class="pf-grande">${foco.grande}</strong>
+              <span class="pf-legenda">${foco.legenda}</span>
+              <div class="pf-apoio">${foco.apoio.map(([r, v]) => `<div><span>${r}</span><strong>${v}</strong></div>`).join("")}</div>
+            </div>
+            <div class="pf-foco-dir">${foco.graf}<p class="pf-nota">${foco.nota}</p></div>
+          </section>
+          <div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + principal)}</p></div>
+          ${lista.length ? `<p class="pf-sec">Também possível com o seu crédito</p>
+          <div class="pf-extras" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${lista.map(k => {
+            const o = OBJ.find(x => x.k === k), [r, v] = extraProposta(k, n, ctx);
+            return `<div class="pf-extra">${icone(o.ico)}<div><span>${r}</span><strong>${v}</strong></div></div>`; }).join("")}</div>` : ""}
+          ${estrategia && fun.length ? `<p class="pf-sec">Como chegar lá: parcelas em dia</p>
+          <div class="pf-trilha">${fun.map(x => `<div class="${x === n.f4 ? "melhor" : ""}"><strong>${ctx.fmtPct(x.concorrencia)}</strong><span>${ctx.esc(x.modalidade)}</span></div>`).join("")}</div>
+          <p class="pf-nota">Concorrência média histórica por modalidade. Lance embutido de até ${ctx.fmtPct(n.p.lance_embutido)} do crédito.</p>` : ""}
+          <p class="pf-aviso">${ctx.T("prop_aviso")} Premissas: contemplação no mês ${n.e.mes} por ${n.e.modalidade === "embutido" ? "lance embutido" : "sorteio"}; reajuste de ${ctx.fmtPct(n.b.reajuste)} ao ano; crédito rendendo ${ctx.fmtPct(n.p.pct_selic_credito)} da Selic.</p>
           <footer class="pf-rodape">
             <span>Proposta válida até <strong>${validade()}</strong></span>
             <span>${ii("ct_telefone")} · ${ii("ct_instagram")} · ${ii("ct_site")}</span>
           </footer>`;
       };
-      el.querySelectorAll("[data-obj]").forEach(bt => bt.addEventListener("click", () => {
-        const i = +bt.dataset.obj; objs.has(i) ? objs.delete(i) : objs.add(i);
-        bt.setAttribute("aria-pressed", String(objs.has(i))); montar();
-      }));
-      el.querySelectorAll("[data-item]").forEach(c => c.addEventListener("change", () => { c.checked ? itens.add(c.dataset.item) : itens.delete(c.dataset.item); montar(); }));
+      el.querySelectorAll("[data-obj]").forEach(bt => bt.addEventListener("click", () => { principal = bt.dataset.obj; extras.clear(); PLUS[principal].forEach(k => extras.add(k)); desenharEscolhas(); montar(); }));
+      el.querySelector("[data-estrategia]").addEventListener("change", ev => { estrategia = ev.target.checked; montar(); });
       el.querySelector('[data-acao="pdf"]').addEventListener("click", () => {
         let caixa = document.getElementById("impressao");
         if (!caixa) { caixa = document.createElement("div"); caixa.id = "impressao"; document.body.appendChild(caixa); }
@@ -326,6 +389,7 @@
         const imprimir = () => { window.print(); document.title = tituloAntes; };
         img && !img.complete ? img.addEventListener("load", imprimir, { once: true }) : imprimir();
       });
+      desenharEscolhas();
       document.addEventListener("redecon:estado", montar);
       el._aoMostrar = montar;
       montar();

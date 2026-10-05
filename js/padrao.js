@@ -14,8 +14,8 @@ window.DADOS_PADRAO = {
   },
   indices: { selic: { data: "16/09/2026", valor: 13.75 }, cdi: { data: null, valor: 13.65 }, dolar: { data: null, valor: 5.2238 } },
   alternativas: [
-    { nome: "Barracão comercial", taxa_am: 0.01, obs: "Construção de custo mais baixo, contratos longos e pouca manutenção, que costuma ficar com a empresa inquilina." },
-    { nome: "Centro de eventos", taxa_am: 0.01, obs: "Espaço locado para eventos ou para uma empresa do ramo, com contrato de longo prazo." }
+    { nome: "Barracão comercial", taxa_am: 0.01, tipo: "percentual", obs: "Construção de custo mais baixo, contratos longos e pouca manutenção, que costuma ficar com a empresa inquilina." },
+    { nome: "Centro de eventos", taxa_am: null, tipo: "por evento", valor_evento: null, eventos_mes: 4, obs: "Espaço alugado por evento, como formaturas, casamentos e festas, geralmente nos fins de semana." }
   ],
   cidades: [
     { cidade: "Curitiba", diaria_usd: 48, ocupacao: 0.398, fonte: "AirROI ago/25-jul/26" },
@@ -58,6 +58,12 @@ window.DADOS_PADRAO = {
   },
   casos: [],
   textos: {
+    prop_ind_comprar: "A Redecon indica a meia parcela com foco nas fidelidades: você chega ao imóvel sem entrada, sem juros e sem se descapitalizar.",
+    prop_ind_quitar: "A Redecon indica trocar os juros do banco pela taxa do consórcio: contemplado, o crédito quita o saldo do financiamento.",
+    prop_ind_render: "A Redecon indica contemplar e manter o crédito aplicado: o rendimento é sobre o valor total e pode ajudar a pagar a parcela.",
+    prop_ind_vender: "A Redecon indica acelerar a contemplação com as fidelidades: quanto mais cedo contempla, maior a vantagem da venda da carta.",
+    prop_ind_aluguel: "A Redecon indica usar o crédito em um imóvel com boa demanda de locação: o aluguel ajuda a pagar a parcela e forma patrimônio.",
+    prop_ind_poupar: "A Redecon indica a disciplina da parcela em dia: o crédito é reajustado todo ano e as fidelidades vão sendo liberadas.",
     prop_titulo: "Proposta direcionada",
     prop_aviso: "Simulação estimada, com base nas premissas atuais. Os valores podem variar. A contemplação ocorre por sorteio ou lance e não é garantida; esta proposta não representa promessa de contemplação nem de rentabilidade.",
     sint_ren_frase: "Rende sobre o crédito, não sobre o que você pagou.",

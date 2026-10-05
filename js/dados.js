@@ -90,9 +90,10 @@
     d.cidades = (abas.Cidades || []).slice(1).filter(l => l[0]).map(l => ({
       cidade: l[0].trim(), diaria_usd: lerValor(l[1]), ocupacao: lerValor(l[2]), fonte: (l[3] || "").trim()
     })).filter(c => c.cidade);
-    d.alternativas = (abas.Alternativas || []).slice(1).filter(l => l[0] && l[1]).map(l => ({
-      nome: l[0].trim(), taxa_am: lerValor(l[1]), obs: (l[2] || "").trim()
-    })).filter(a => a.taxa_am > 0);
+    d.alternativas = (abas.Alternativas || []).slice(1).filter(l => l[0] && (l[1] || l[3])).map(l => ({
+      nome: l[0].trim(), taxa_am: lerValor(l[1]), obs: (l[2] || "").trim(),
+      tipo: (l[3] || "").trim().toLowerCase(), valor_evento: lerValor(l[4]), eventos_mes: lerValor(l[5])
+    }));
     d.textos = {};
     abas.Textos.slice(1).forEach(l => { if (l[0]) d.textos[l[0].trim()] = (l[2] || "").trim(); });
     return d;

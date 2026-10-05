@@ -1030,3 +1030,8 @@ p, li, h1, h2, h3, h4, span, small, strong, label, dd, dt { text-wrap: pretty; }
 .pf-mb-linha span { display: grid; line-height: 1.2; }
 .pf-mb-linha small { font-size: .85em; color: #8EA0C4; }
 .pf-mc-seta { stroke-dasharray: none; }
+
+/* Indicação Redecon: faixa menor, junto dos compromissos */
+.pf-comp .pf-indica-mini { grid-column: 1 / -1; padding: 7px 14px; border-radius: 10px; gap: 10px; }
+.pf-indica-mini strong { font-size: .82em; }
+.pf-indica-mini p { font-size: .8em; }

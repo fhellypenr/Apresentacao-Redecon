@@ -59,9 +59,9 @@ window.DADOS_PADRAO = {
   casos: [],
   textos: {
     virada_botao: "Conhecer o consórcio de hoje",
-    prop_ind_aquisicao: "A Redecon indica a meia parcela: você não se descapitaliza, paga o mínimo possível antes de contemplar e foca nas fidelidades para chegar à contemplação.",
-    prop_ind_poupanca: "A Redecon indica a disciplina da parcela em dia: o crédito é reajustado todo ano e as fidelidades vão sendo liberadas.",
-    prop_ind_investimento: "A Redecon indica contemplar e escolher o melhor caminho para o crédito: deixá-lo rendendo, vender a carta ou investir em um imóvel para renda.",
+    prop_ind_aquisicao: "Meia parcela até a contemplação: você se descapitaliza menos, mantém margem para outras possibilidades e foca nas fidelidades.",
+    prop_ind_poupanca: "Meia parcela em dia: o crédito é reajustado todo ano, você mantém margem no orçamento e avança nas fidelidades.",
+    prop_ind_investimento: "Meia parcela até contemplar: você se descapitaliza menos e, depois, escolhe o melhor caminho para o crédito: render, vender ou gerar renda.",
     prop_ind_comprar: "A Redecon indica a meia parcela com foco nas fidelidades: você chega ao imóvel sem entrada, sem juros e sem se descapitalizar.",
     prop_ind_quitar: "A Redecon indica trocar os juros do banco pela taxa do consórcio: contemplado, o crédito quita o saldo do financiamento.",
     prop_ind_render: "A Redecon indica contemplar e manter o crédito aplicado: o rendimento é sobre o valor total e pode ajudar a pagar a parcela.",

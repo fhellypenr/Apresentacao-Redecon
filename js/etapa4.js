@@ -317,7 +317,7 @@
         num: `Em 5 anos, crédito de <b>${f(n.credAno(5))}</b>; a parcela acompanha na mesma proporção (${f(n.parcAno(5))}).` };
       case "rendendo": return {
         frase: "Depois de contemplado, você não é obrigado a usar o crédito: ele fica rendendo sobre o valor total.",
-        visual: miniBarras([{ r: "Rendimento no mês", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
+        visual: miniBarras([{ r: "Rendimento", sub: "por mês", v: n.rende1 }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
         num: `Contemplando no mês ${mes}, cerca de <b>${f(n.rende1)}</b> de rendimento no 1º mês, com a Selic de hoje.` };
       case "venda": return {
         frase: n.venda.lucro > n.cdb.ganho ? "Liberdade para vender a carta contemplada, com ganho acima de uma aplicação tradicional." : "Liberdade para vender a carta contemplada, se for o melhor caminho no momento.",
@@ -326,7 +326,8 @@
       default: {
         const melhor = n.alt && n.altV > n.alug ? { nome: ctx.esc(n.alt.nome).toLowerCase(), v: n.altV } : { nome: "aluguel tradicional", v: n.alug };
         return {
-          frase: "O imóvel trabalha para você: o aluguel ajuda a pagar a parcela, e o próprio inquilino pode quitar o consórcio.",
+          frase: melhor.v >= n.parcPos ? "O imóvel trabalha para você: aumenta o seu patrimônio e o aluguel pode pagar a parcela integralmente."
+            : "O imóvel trabalha para você: aumenta o seu patrimônio e gera uma renda que ajuda a pagar a parcela.",
           visual: miniBarras([{ r: "Aluguel", v: melhor.v }, { r: "Parcela", v: n.parcPos, cls: "neutra" }]),
           num: `Com ${melhor.nome}, cerca de <b>${f(melhor.v)}/mês</b>, para uma parcela de ${f(n.parcPos)}.` };
       }
@@ -424,8 +425,6 @@
               </section>`; }).join("")}</div>
           </div>` : ""}
 
-          <div class="pf-bloco"><div class="pf-indica"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div></div>
-
           ${estrategia && fun.length ? `<div class="pf-bloco">
             <p class="pf-sec"><b>${ordem.length ? 3 : 2}</b> Como chegar lá: as fidelidades</p>
             <p class="pf-funil-frase">Quanto mais parcelas seguidas em dia, menos gente disputando a contemplação.</p>
@@ -435,6 +434,7 @@
           <div class="pf-bloco pf-comp">
             <div class="pf-comp-cli"><span>${ctx.T("compromisso_cliente_rotulo")}</span><strong>${ctx.T("compromisso_cliente")}</strong></div>
             <div class="pf-comp-red"><span>${ctx.T("compromisso_redecon_rotulo")}</span><ul>${itensRedecon.map(i => `<li>${i}</li>`).join("")}</ul></div>
+            <div class="pf-indica pf-indica-mini"><strong>Indicação Redecon</strong><p>${ctx.T("prop_ind_" + pilar)}</p></div>
           </div>
           </div>
           <div class="pf-fim">

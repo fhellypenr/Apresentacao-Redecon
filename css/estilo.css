@@ -1056,3 +1056,6 @@ p, li, h1, h2, h3, h4, span, small, strong, label, dd, dt { text-wrap: pretty; }
 .pf-fluxo strong { font-size: .78em; color: #101F3D; }
 .pf-fluxo span { font-size: .66em; color: #5A6B8C; }
 .pf-fluxo > i { font-style: normal; color: #F84434; font-weight: 700; }
+
+.prop-plano-ctl { margin: 0; gap: 10px 14px; font-size: .9em; }
+.prop-plano-ctl .ctl-rs input { width: 10em; }

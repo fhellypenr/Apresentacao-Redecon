@@ -67,7 +67,8 @@
       if (k) d.indices[k] = { data: (l[3] || "").trim() || null, valor: lerValor(l[4]) };
     });
     d.prazos = abas.Prazos.slice(1).filter(l => l[0]).map(l => ({
-      prazo: lerValor(l[0]), taxa_adm: lerValor(l[1]), fundo_reserva: lerValor(l[2])
+      prazo: lerValor(l[0]), taxa_adm: lerValor(l[1]), fundo_reserva: lerValor(l[2]),
+      credito_min: lerValor(l[6]) || null, credito_max: lerValor(l[7]) || null
     }));
     d.funil = abas.Funil.slice(1).filter(l => l[1]).map(l => ({
       modalidade: l[1].trim(), condicao: (l[2] || "").trim(), meses: lerValor(l[3]) || 0,

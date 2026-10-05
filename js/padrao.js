@@ -26,9 +26,9 @@ window.DADOS_PADRAO = {
     { cidade: "Foz do Iguaçu", diaria_usd: 70, ocupacao: 0.393, fonte: "AirROI ago/25-jul/26" }
   ],
   prazos: [
-    { prazo: 180, taxa_adm: 0.22, fundo_reserva: 0.01 },
-    { prazo: 200, taxa_adm: 0.22, fundo_reserva: 0.01 },
-    { prazo: 220, taxa_adm: 0.22, fundo_reserva: 0.01 },
+    { prazo: 180, taxa_adm: 0.22, fundo_reserva: 0.01, credito_min: 100000, credito_max: 180000 },
+    { prazo: 200, taxa_adm: 0.22, fundo_reserva: 0.01, credito_min: 200000, credito_max: 400000 },
+    { prazo: 220, taxa_adm: 0.22, fundo_reserva: 0.01, credito_min: 500000, credito_max: 1000000 },
     { prazo: 240, taxa_adm: 0.23, fundo_reserva: 0.01 }
   ],
   funil: [

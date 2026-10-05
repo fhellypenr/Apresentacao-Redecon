@@ -312,7 +312,7 @@
       case "comparativo": return {
         frase: ["O mesmo imóvel, sem entrada e sem juros:", "a diferença no total pago é grande."],
         visual: miniBarras([{ r: "Financiamento", sub: `${n.p.fin_prazo} meses`, v: n.cmp.fin.totalPago, cls: "neutra" }, { r: "Consórcio", sub: `${n.b.prazo} meses`, v: n.cmp.total }]),
-        num: `Diferença estimada de <b>${f(n.cmp.economia)}</b> no total pago, contemplando no mês ${mes}.` };
+        num: `Diferença estimada de <b>${f(n.cmp.economia)}</b> no total pago, contemplando no mês ${mes}${n.mod === "embutido" ? " por sorteio, com o crédito inteiro no imóvel" : ""}.` };
       case "reajuste": return {
         frase: ["Mesmo antes da contemplação,", "o seu crédito é reajustado todo ano."],
         visual: miniColunas([{ r: "Hoje", v: n.b.credito }, { r: "5 anos", v: n.credAno(5) }, { r: "10 anos", v: n.credAno(10) }]),
@@ -371,30 +371,24 @@
           <label class="prop-nome"><span class="prop-rotulo">Nome do cliente</span><input data-cliente type="text" autocomplete="off" placeholder="Digite o nome" value="${ctx.esc(ctx.ajustes.cliente || "")}"></label>
           <p class="prop-rotulo">Foco do cliente (Método API)</p>
           <div class="prop-chips">${Object.entries(PILAR).map(([k, p]) => `<button class="chip-op" data-pilar-p="${k}" aria-pressed="false">${p.nome}</button>`).join("")}</div>
-          <p class="prop-rotulo">Cenário de contemplação</p>
-          <div class="prop-cenario">
-            <label class="prop-mes"><span>Mês</span><input data-p-mes type="number" min="1" value="${ctx.estado.mes}"></label>
-            <div class="seg" role="group"><button data-p-mod="sorteio">Sorteio</button><button data-p-mod="embutido">Lance embutido</button></div>
-          </div>
+          <p class="prop-rotulo">Plano e cenário de contemplação</p>
+          ${A().controles(ctx, ["credito", "prazo", "parcela", "mes", "modalidade"]).replace('class="controles"', 'class="controles prop-plano-ctl"')}
           <p class="prop-rotulo">Blocos da proposta</p>
           <div class="prop-blocos">${Object.entries(PILAR).map(([pk, p]) => `
             <div class="prop-grupo"><span>${p.nome}</span>${p.blocos.map(k => `<label class="tela-op"><input type="checkbox" data-bloco="${k}"> ${BLOCOS[k].nome}</label>`).join("")}</div>`).join("")}
             <div class="prop-grupo"><span>Contemplação</span><label class="tela-op"><input type="checkbox" data-estrategia checked> Como chegar lá (fidelidades)</label></div>
           </div>
-          <p class="prop-nota">Crédito, prazo e parcela vêm de "O seu plano". A data e a validade entram sozinhas.</p>
           <button class="btn btn-pdf" data-acao="pdf">Gerar PDF da proposta</button>
         </div>
         <div class="prop-folha-caixa"><div class="prop-folha" data-alvo="folha"></div></div>
       </div>`,
     iniciar: (el, ctx) => {
       el.querySelector('[data-acao="voltar-plano"]').addEventListener("click", () => ctx.irPara("fechamento"));
-      let pilar = "aquisicao", estrategia = true, modProp = ctx.estado.modalidade;
+      let pilar = "aquisicao", estrategia = true;
+      A().ligarControles(el, ctx);
       const blocos = new Set(SUGESTAO.aquisicao);
       const sincronizar = () => {
-        modProp = ctx.estado.modalidade;
-        el.querySelectorAll("[data-p-mod]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pMod === modProp)));
-        const im = el.querySelector("[data-p-mes]");
-        if (document.activeElement !== im) { im.value = ctx.estado.mes; im.max = ctx.estado.prazo - 1; }
+        A().sincronizar(el, ctx);
         el.querySelectorAll("[data-pilar-p]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pilarP === pilar)));
         el.querySelectorAll("[data-bloco]").forEach(c => { c.checked = blocos.has(c.dataset.bloco); });
       };
@@ -461,16 +455,6 @@
           </footer>
           </div>`;
       };
-      el.querySelectorAll("[data-p-mod]").forEach(b => b.addEventListener("click", () => {
-        modProp = b.dataset.pMod;
-        ctx.estado.modalidade = modProp;
-        ctx.mudou();
-      }));
-      el.querySelector("[data-p-mes]").addEventListener("change", ev => {
-        const v = Math.round(+ev.target.value);
-        if (v >= 1) ctx.estado.mes = Math.min(v, ctx.estado.prazo - 1);
-        ctx.mudou();
-      });
       el.querySelector("[data-cliente]").addEventListener("input", ev => { ctx.definirCliente(ev.target.value); montar(); });
       el.querySelectorAll("[data-pilar-p]").forEach(bt => bt.addEventListener("click", () => {
         pilar = bt.dataset.pilarP; blocos.clear(); SUGESTAO[pilar].forEach(k => blocos.add(k)); sincronizar(); montar();

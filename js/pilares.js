@@ -62,12 +62,24 @@
     };
     return `<div class="controles">${quais.map(q => partes[q]).join("")}</div>`;
   }
+  // Prazo sugerido pela faixa de crédito (aba Prazos, colunas "Crédito a partir de"): vale a maior faixa já alcançada
+  function prazoPorCredito(ctx, credito) {
+    const faixas = (ctx.D.prazos || []).filter(x => x.credito_min > 0).sort((a, b) => a.credito_min - b.credito_min);
+    if (!faixas.length) return null;
+    let escolhida = faixas[0];
+    faixas.forEach(x => { if (credito >= x.credito_min) escolhida = x; });
+    return escolhida.prazo;
+  }
   function ligarControles(el, ctx) {
     el.querySelectorAll("[data-ctl]").forEach(c => {
       const k = c.dataset.ctl;
       const aplicar = () => {
         const e = ctx.estado;
-        if (k === "credito") { const v = lerMoeda(c.value); if (v > 0) e.credito = v; c.value = fmtCampo(e.credito); }
+        if (k === "credito") {
+          const v = lerMoeda(c.value); if (v > 0) e.credito = v; c.value = fmtCampo(e.credito);
+          const pz = prazoPorCredito(ctx, e.credito); // prazo acompanha a faixa; pode ser trocado depois no seletor
+          if (pz && ctx.D.prazos.some(x => +x.prazo === +pz)) { e.prazo = pz; e.mes = Math.min(e.mes, e.prazo - 1); }
+        }
         if (k === "prazo") { e.prazo = +c.value; e.mes = Math.min(e.mes, e.prazo - 1); }
         if (k === "meia") e.meia = c.dataset.v === "1";
         if (k === "modalidade") e.modalidade = c.dataset.v;

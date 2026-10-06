@@ -66,11 +66,13 @@
           <h3>${ctx.T("virada_antes_t")}</h3>
           <div class="ccm"><span>Casa</span><span>Carro</span><span>Moto</span></div>
           <p>${ctx.T("virada_antes")}</p>
+          <p class="palavras palavras-antes">${lista(ctx.T("virada_antes_palavras")).map(w => `<s>${w}</s>`).join("")}</p>
         </div>
         <button class="btn btn-virada" data-acao="virada">${ctx.T("virada_botao")} <span aria-hidden="true">→</span></button>
         <div class="virada-seta" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 24h28M28 14l10 10-10 10"/></svg></div>
         <div class="virada-depois">
           <h3>${ctx.T("virada_depois_t")}</h3>
+          <p class="palavras palavras-hoje">${lista(ctx.T("virada_hoje_palavras")).map(w => `<b>${w}</b>`).join("")}</p>
           <p class="virada-frase">${ctx.T("virada_frase")}</p>
           <ul class="hoje">${lista(ctx.T("virada_usos")).map((u, i) => `<li style="--k:${i}">${icone(ICONES_HOJE[i] || "casa")}<span>${u}</span></li>`).join("")}</ul>
         </div>
@@ -97,6 +99,27 @@
     }
   };
 
+
+  // ---------- Seu objetivo (o cliente escolhe; a apresentação segue o caminho dele) ----------
+  const OBJ = [["aquisicao", "A", "casa"], ["poupanca", "P", "grafico"], ["investimento", "I", "rende"], ["geral", "?", "caminhos"]];
+  const objetivo = {
+    id: "objetivo", nome: "O que você quer conquistar?",
+    html: ctx => `
+      <h2 class="titulo">${ctx.T("obj_titulo")}</h2>
+      <p class="sub">${ctx.T("obj_sub")}</p>
+      <div class="objetivos centro-vertical">
+        ${OBJ.map(([k, letra, ico]) => { const [t, d] = String(ctx.T("obj_" + k)).split("|");
+          return `<button class="objetivo${k === "geral" ? " obj-geral" : ""}" data-obj="${k}" aria-pressed="${(ctx.ajustes.foco || "geral") === k}">
+            <span class="obj-letra">${letra}</span>${icone(ico)}<strong>${t || ""}</strong><span>${d || ""}</span></button>`; }).join("")}
+      </div>`,
+    iniciar: (el, ctx) => {
+      el.querySelectorAll("[data-obj]").forEach(b => b.addEventListener("click", () => {
+        el.querySelectorAll("[data-obj]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+        b.classList.add("escolhido");
+        setTimeout(() => { ctx.definirFoco(b.dataset.obj); ctx.avancar(); }, 450);
+      }));
+    }
+  };
 
   // ---------- Mapa do API ----------
   const mapa = {
@@ -218,7 +241,7 @@
         const contemp = `contemplado no mês ${e.mes}${e.modalidade === "embutido" ? ", com lance embutido" : ""}`;
         el.querySelector('[data-alvo="plano"]').innerHTML =
           card("Seu consórcio",
-            H.numero("Crédito", f(V), `${b.prazo} meses`, "grande") +
+            H.numero("No seu nome, sem entrada", f(V), `${b.prazo} meses`, "grande") +
             H.numero(b.meia ? "Meia parcela" : "Parcela", f(parc, 2), `taxa de ${ctx.fmtPct(b.taxaAdm / b.prazo, 3)} ao mês, sem juros`), "plano-destaque") +
           card(`Aquisição <span class="seg seg-mini seg-card" role="group" aria-label="Tabela do financiamento"><button data-sis="Price" aria-pressed="${sistema === "Price"}">Price</button><button data-sis="SAC" aria-pressed="${sistema === "SAC"}">SAC</button></span>`,
             H.numero("Juros de um financiamento", f(fin.totalJuros), `para financiar o mesmo valor (${sistema}) a ${ctx.fmtPct(p.fin_taxa_aa, 2)} ao ano + TR`) +
@@ -384,9 +407,9 @@
       </div>`,
     iniciar: (el, ctx) => {
       el.querySelector('[data-acao="voltar-plano"]').addEventListener("click", () => ctx.irPara("fechamento"));
-      let pilar = "aquisicao", estrategia = true;
+      let pilar = PILAR[ctx.ajustes.foco] ? ctx.ajustes.foco : "aquisicao", estrategia = true;
       A().ligarControles(el, ctx);
-      const blocos = new Set(SUGESTAO.aquisicao);
+      const blocos = new Set(SUGESTAO[pilar]);
       const sincronizar = () => {
         A().sincronizar(el, ctx);
         el.querySelectorAll("[data-pilar-p]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pilarP === pilar)));
@@ -417,7 +440,7 @@
           <div class="pf-bloco">
             <p class="pf-sec"><b>1</b> Seu plano</p>
             <div class="pf-plano4">
-              <div><span>Crédito</span><strong>${f(n.b.credito, 2)}</strong></div>
+              <div><span>Crédito no seu nome</span><strong>${f(n.b.credito, 2)}</strong></div>
               <div><span>${n.b.meia ? "Meia parcela" : "Parcela"}</span><strong>${f(n.parc, 2)}</strong></div>
               <div><span>Prazo</span><strong>${n.b.prazo} meses</strong></div>
               <div class="pf-plano-sim"><span>Sem entrada<br>Sem juros</span></div>
@@ -521,5 +544,5 @@
     }
   };
 
-  window.ETAPA4 = { quemRedecon, quemHs, virada, mapa, sintese, casos, fechamento, proposta, encerramento };
+  window.ETAPA4 = { objetivo, quemRedecon, quemHs, virada, mapa, sintese, casos, fechamento, proposta, encerramento };
 })();

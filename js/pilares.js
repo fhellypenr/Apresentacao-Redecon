@@ -406,16 +406,23 @@
         ? `<p class="ritmo">Rendimento equivalente: <strong>${pctTxt(a.tirVenda, 2)} ao mês</strong> na venda, contra ${pctTxt(a.tirCdb, 2)} ao mês no CDB.</p>` : "";
       const orientacao = venceu ? "" :
         `<p class="orientacao-curta">${ctx.T("in_venda_orientacao")}</p>`;
+      // Lucro (a distância) × rentabilidade ao mês (a velocidade), e a mesma régua contra o CDB
+      const lucroPct = a.c.pagoTotal > 0 ? a.v.lucro / a.c.pagoTotal : 0;
+      const temTir = a.tirVenda != null && a.tirCdb != null;
+      const maxT = temTir ? Math.max(a.tirVenda, a.tirCdb, 0.0001) : 1;
+      const barraT = (rot, v, cls) => `<div class="regua-linha"><span>${rot}</span><div class="regua-trilho"><i class="${cls}" style="width:${Math.max(3, Math.max(0, v) / maxT * 100).toFixed(1)}%"></i></div><strong>${pctTxt(v, 2)}</strong></div>`;
       el.querySelector('[data-alvo="nums"]').innerHTML = `
-        <p class="linha-info">Contemplado no mês ${e.mes}, você pagou <strong>${f(a.c.pagoTotal)}</strong></p>
-        <div class="grade-venda">
-          ${numero("Vende a carta por", f(a.v.recebe), "", "grande")}
-          ${numero(a.v.lucro >= 0 ? "Lucro na venda" : "Resultado da venda", f(a.v.lucro), "venda − total pago", "grande" + (a.v.lucro > 0 && venceu ? " positivo" : ""))}
-          ${numero(venceu ? "No CDB, apenas" : "No CDB", f(a.cdb.ganho), "mesmas parcelas, líquido de IR", venceu ? "" : "positivo")}
-          ${numero(venceu ? "A favor da venda" : "A favor do CDB", f(Math.abs(dif)), vezesTxt, venceu ? "positivo" : "")}
+        <p class="linha-info">Contemplado no mês ${e.mes}, você pagou <strong>${f(a.c.pagoTotal)}</strong> e vende a carta por <strong>${f(a.v.recebe)}</strong></p>
+        <div class="vel">
+          <div class="vel-card"><span class="vel-rot">Lucro</span><strong class="vel-num">${pctTxt(lucroPct, 0)}</strong>
+            <span class="vel-leg">quanto você ganhou</span><em class="vel-met">a distância</em><small>${f(a.v.lucro)} sobre o que pagou</small></div>
+          <div class="vel-card vel-destaque"><span class="vel-rot">Rentabilidade</span><strong class="vel-num">${temTir ? pctTxt(a.tirVenda, 2) : "—"}</strong><span class="vel-unid">ao mês</span>
+            <span class="vel-leg">em quanto tempo</span><em class="vel-met">a velocidade</em></div>
         </div>
-        ${orientacao}
-        ${ritmo}`;
+        ${temTir ? `<div class="regua"><p class="regua-tit">Na mesma régua: rentabilidade ao mês</p>
+          ${barraT("Venda da carta", a.tirVenda, venceu ? "" : "neutra")}
+          ${barraT("Mesmas parcelas no CDB", a.tirCdb, venceu ? "neutra" : "")}</div>` : ""}
+        ${orientacao}`;
       const itens = [], linhaCdb = [];
       const limite = Math.min(b.prazo - 1, 120);
       for (let m = 6; m <= limite; m += 6) {
@@ -437,7 +444,8 @@
       el.querySelector('[data-alvo="rodape"]').innerHTML = rodape(ctx, {
         sentido: ctx.T("in_venda_sentido"),
         itens: [
-          `Venda com ágio de ${ctx.fmtPct(e.agio)} sobre o crédito líquido na contemplação; lucro = venda − total pago.`,
+          ctx.T("in_venda_agio"),
+          `Venda com ágio de ${ctx.fmtPct(e.agio)} sobre o crédito líquido na contemplação; lucro = (venda − total pago) ÷ total pago.`,
           `CDB a ${ctx.fmtPct(b.p.cdb_pct_cdi)} do CDI, IR conforme o prazo de cada parcela; rendimento equivalente = taxa mensal que leva as parcelas pagas ao valor recebido.`
         ]
       });

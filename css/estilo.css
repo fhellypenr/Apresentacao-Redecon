@@ -1059,3 +1059,52 @@ p, li, h1, h2, h3, h4, span, small, strong, label, dd, dt { text-wrap: pretty; }
 
 .prop-plano-ctl { margin: 0; gap: 10px 14px; font-size: .9em; }
 .prop-plano-ctl .ctl-rs input { width: 10em; }
+
+/* ---------- Venda: lucro (distância) × rentabilidade (velocidade) ---------- */
+.vel { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(10px, 1.6vw, 22px); margin-top: clamp(10px, 2vh, 20px); }
+.vel-card { border: 1px solid var(--linha); border-radius: 14px; padding: clamp(12px, 1.6vw, 22px); display: grid; gap: 2px; align-content: start; }
+.vel-destaque { border: 2px solid var(--vermelho-2); background: rgba(248, 68, 52, .07); }
+.vel-rot { font-size: .78em; text-transform: uppercase; letter-spacing: .08em; color: var(--texto-suave); font-weight: 700; }
+.vel-num { font-family: var(--fonte-titulo); font-size: clamp(34px, 3.6vw, 68px); line-height: 1; color: var(--texto); }
+.vel-destaque .vel-num { color: #FF8A7A; }
+.vel-unid { font-size: .85em; color: var(--texto-suave); margin-top: -2px; }
+.vel-leg { font-size: .82em; color: var(--texto-suave); margin-top: 6px; }
+.vel-leg em { font-style: normal; color: var(--texto); font-weight: 700; }
+.vel-card small { font-size: .74em; color: var(--azul-300); }
+.regua { margin-top: clamp(12px, 2.2vh, 24px); display: grid; gap: 8px; }
+.regua-tit { margin: 0; font-size: .78em; color: var(--texto-suave); }
+.regua-linha { display: grid; grid-template-columns: minmax(9em, auto) 1fr auto; gap: 10px; align-items: center; font-size: .82em; }
+.regua-linha span { color: var(--texto-suave); }
+.regua-trilho { height: 14px; background: rgba(255,255,255,.07); border-radius: 7px; overflow: hidden; }
+.regua-trilho i { display: block; height: 100%; border-radius: 7px; background: var(--degrade); }
+.regua-trilho i.neutra { background: #8EA0C4; }
+.regua-linha strong { font-family: var(--fonte-titulo); }
+
+/* ---------- Virada: palavras do antes e do hoje ---------- */
+.palavras { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0 0; }
+.palavras-antes s { color: var(--texto-suave); text-decoration-color: var(--vermelho-2); text-decoration-thickness: 2px; font-weight: 600; }
+.palavras-hoje b { color: #FF8A7A; font-family: var(--fonte-titulo); font-size: .95em; }
+.palavras-hoje b + b::before, .palavras-antes s + s::before { content: ""; }
+
+/* ---------- Seu objetivo ---------- */
+.objetivos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 24px); }
+.objetivo { position: relative; text-align: left; display: grid; gap: 8px; align-content: start; padding: clamp(16px, 2vw, 30px); border-radius: 16px;
+  border: 1px solid var(--linha); background: rgba(255,255,255,.03); color: var(--texto); font: inherit; cursor: pointer; transition: transform .2s, border-color .2s, background .2s; }
+.objetivo:hover { transform: translateY(-4px); border-color: var(--vermelho-2); }
+.objetivo .ico { width: clamp(36px, 3vw, 54px); stroke: #FF8A7A; }
+.objetivo strong { font-family: var(--fonte-titulo); font-size: clamp(18px, 1.5vw, 28px); line-height: 1.15; }
+.objetivo > span:last-child { color: var(--texto-suave); font-size: .9em; line-height: 1.35; }
+.obj-letra { position: absolute; top: 12px; right: 16px; font-family: var(--fonte-titulo); font-weight: 800; font-size: clamp(28px, 2.6vw, 48px); color: rgba(255,255,255,.08); }
+.objetivo[aria-pressed="true"] { border: 2px solid var(--vermelho-2); background: rgba(248, 68, 52, .08); }
+.objetivo.escolhido { transform: scale(1.04); }
+.obj-geral { border-style: dashed; }
+.obj-geral .ico { stroke: var(--azul-300); }
+@media (max-width: 860px) { .objetivos { grid-template-columns: 1fr 1fr; } .vel { grid-template-columns: 1fr 1fr; } }
+
+.vel-met { font-style: normal; font-weight: 700; color: var(--texto); font-size: .85em; text-transform: uppercase; letter-spacing: .06em; }
+.vel-destaque .vel-met { color: #FF8A7A; }
+.vel-card small { margin-top: 6px; }
+.palavras { gap: 6px; }
+.palavras-hoje b, .palavras-antes s { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: .78em; }
+.palavras-hoje b { border: 1px solid rgba(248, 68, 52, .55); background: rgba(248, 68, 52, .12); font-family: var(--fonte-texto); font-weight: 700; }
+.palavras-antes s { border: 1px solid var(--linha); }

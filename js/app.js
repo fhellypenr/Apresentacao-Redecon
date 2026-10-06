@@ -182,6 +182,13 @@
     get estado() { return estado; },
     get ajustes() { return ajustes; },
     // Muda o nome do cliente sem remontar a apresentação (usado na proposta)
+    // O cliente escolhe o objetivo na tela "O que você quer conquistar?": a apresentação se reorganiza pelo foco
+    definirFoco(foco) {
+      ajustes.foco = foco; salvarAjustes();
+      const s = $("#aj-foco"); if (s) s.value = foco;
+      montar();
+    },
+    avancar: () => avancar(),
     definirCliente(nome) { ajustes.cliente = String(nome || "").trim(); salvarAjustes(); const i = $("#aj-cliente"); if (i) i.value = ajustes.cliente; },
     // Vai para a primeira tela da lista que estiver ligada
     irPara(ids) { for (const id of [].concat(ids)) { const k = LISTA.findIndex(t => t.id === id); if (k >= 0) { ir(k); return; } } },
@@ -203,6 +210,7 @@
     return [
       { nome: "Abertura", telas: [{ id: "capa", nome: "Capa", classe: "capa", html: telaCapa }] },
       { nome: "Quem somos", telas: [E.quemRedecon, E.quemHs].filter(Boolean).map(comCtx) },
+      { nome: "Seu objetivo", telas: [E.objetivo].filter(Boolean).map(comCtx) },
       { nome: "Virada de chave", telas: [E.virada].filter(Boolean).map(comCtx) },
       { nome: "Método API", telas: [E.mapa].filter(Boolean).map(comCtx) },
       ...ordem.map(k => ({ nome: (P[k] && P[k].nome) || k, telas: P[k] ? P[k].telas.map(comCtx) : [] })),
@@ -224,7 +232,7 @@
   // ---------- Fundo: rede de conexões viva (Redecon = rede) ----------
   // Um único canvas atrás de todas as telas. Pontos que se movem e se ligam; reagem ao mouse ou ao toque.
   // Nas telas de cálculo ele fica bem suave para não competir com os números.
-  const TELAS_FUNDO_FORTE = ["capa", "quem-redecon", "quem-hs", "virada", "mapa-api", "sintese", "regras", "otimizar", "compromisso", "encerramento"];
+  const TELAS_FUNDO_FORTE = ["capa", "objetivo", "quem-redecon", "quem-hs", "virada", "mapa-api", "sintese", "regras", "otimizar", "compromisso", "encerramento"];
   // Leve para o aparelho: resolução 1x, no máximo ~30 quadros por segundo, linhas agrupadas por cor
   // e animação só nas telas de "fundo forte"; nas telas de cálculo o fundo fica parado.
   const fundo = { animar: true, religar: () => {} };
@@ -450,7 +458,7 @@
   }
 
   // ---------- Animações de entrada ----------
-  const REVELA = ".titulo, .sub, .controles, .topo-linha, .stat, .cadeia-titulo, .elo, .mapa-ilustra, .opcao, .caminho, .pilar-sint, " +
+  const REVELA = ".titulo, .sub, .controles, .objetivo, .vel-card, .regua, .topo-linha, .stat, .cadeia-titulo, .elo, .mapa-ilustra, .opcao, .caminho, .pilar-sint, " +
     ".plano-card, .proximo, .uso, .usos-rodape, .regra, .alavanca, .lado, .virada-antes, .virada-seta, .virada-depois, .hoje li, " +
     ".placar, .degrau, .funil3d, .etapa, .controle, .dois > *, .aluguel-grade > *, .destaque-fim, .economia, .fim-foto, .fim-logo, .fim-corpo > *, .caso, [data-alvo=\"rodape\"]";
   function animarEntrada(el) {
@@ -466,7 +474,7 @@
   }
   // Números grandes sobem de zero até o valor (ex.: "+3.200", "+R$ 27 bi")
   function contarNumeros(el) {
-    $$(".stat strong, .economia strong, .destaque-fim strong, .num.grande .num-valor, .num.positivo .num-valor, .pf-grande", el).forEach(n => {
+    $$(".vel-num, .stat strong, .economia strong, .destaque-fim strong, .num.grande .num-valor, .num.positivo .num-valor, .pf-grande", el).forEach(n => {
       if (n.closest(".prop-folha")) return;
       const orig = n.dataset.orig || n.textContent;
       n.dataset.orig = orig;

@@ -106,6 +106,7 @@ window.DADOS_PADRAO = {
     obj_geral: "Ainda não sei|Vamos ver os três caminhos e escolher juntos.",
     virada_antes_palavras: "Parcela; Sorteio; Bem de consumo",
     virada_hoje_palavras: "Lucro; Rentabilidade; Ativo financeiro",
+    in_venda_viagem: "Os mesmos 100 km, em 1 hora ou em 10 horas, não são a mesma viagem. O lucro mostra quanto você ganhou; a rentabilidade, em quanto tempo. É ela que se compara com qualquer aplicação.",
     in_venda_agio: "O ágio não é garantido: depende do mercado na hora da venda. Quanto mais tarde a venda, menor o ganho.",
     mapa_aquisicao: "Comprar, construir ou quitar um financiamento, sem entrada e sem juros.",
     mapa_poupanca: "Guardar com disciplina enquanto o crédito cresce todo ano.",

@@ -474,7 +474,7 @@
   }
   // Números grandes sobem de zero até o valor (ex.: "+3.200", "+R$ 27 bi")
   function contarNumeros(el) {
-    $$(".vel-num, .stat strong, .economia strong, .destaque-fim strong, .num.grande .num-valor, .num.positivo .num-valor, .pf-grande", el).forEach(n => {
+    $$(".vel-valor, .stat strong, .economia strong, .destaque-fim strong, .num.grande .num-valor, .num.positivo .num-valor, .pf-grande", el).forEach(n => {
       if (n.closest(".prop-folha")) return;
       const orig = n.dataset.orig || n.textContent;
       n.dataset.orig = orig;

@@ -367,7 +367,14 @@
       <div class="dois dois-venda centro-vertical">
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Ganho conforme o mês da contemplação (toque numa barra para escolher)</p><div data-alvo="graf"></div>
-          <p class="nota-venda" data-alvo="nota-venda"></p></div>
+          <p class="nota-venda" data-alvo="nota-venda"></p>
+          <div class="viagem">
+            <div class="viagem-pistas" aria-hidden="true">
+              <div class="pista"><span>1 hora</span><div class="pista-via"><i class="carro rapido"></i></div></div>
+              <div class="pista"><span>10 horas</span><div class="pista-via"><i class="carro lento"></i></div></div>
+            </div>
+            <p>${ctx.T("in_venda_viagem")}</p>
+          </div></div>
       </div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => reagir(el, ctx, () => {
@@ -410,18 +417,18 @@
       const lucroPct = a.c.pagoTotal > 0 ? a.v.lucro / a.c.pagoTotal : 0;
       const temTir = a.tirVenda != null && a.tirCdb != null;
       const maxT = temTir ? Math.max(a.tirVenda, a.tirCdb, 0.0001) : 1;
-      const barraT = (rot, v, cls) => `<div class="regua-linha"><span>${rot}</span><div class="regua-trilho"><i class="${cls}" style="width:${Math.max(3, Math.max(0, v) / maxT * 100).toFixed(1)}%"></i></div><strong>${pctTxt(v, 2)}</strong></div>`;
+      const barraT = (rot, v, cls, ganho) => `<div class="regua-linha"><span>${rot}</span><div class="regua-trilho"><i class="${cls}" style="width:${Math.max(3, Math.max(0, v) / maxT * 100).toFixed(1)}%"></i></div><strong>${pctTxt(v, 2)} <small>ao mês</small></strong><em>${f(ganho)}</em></div>`;
       el.querySelector('[data-alvo="nums"]').innerHTML = `
         <p class="linha-info">Contemplado no mês ${e.mes}, você pagou <strong>${f(a.c.pagoTotal)}</strong> e vende a carta por <strong>${f(a.v.recebe)}</strong></p>
         <div class="vel">
-          <div class="vel-card"><span class="vel-rot">Lucro</span><strong class="vel-num">${pctTxt(lucroPct, 0)}</strong>
-            <span class="vel-leg">quanto você ganhou</span><em class="vel-met">a distância</em><small>${f(a.v.lucro)} sobre o que pagou</small></div>
-          <div class="vel-card vel-destaque"><span class="vel-rot">Rentabilidade</span><strong class="vel-num">${temTir ? pctTxt(a.tirVenda, 2) : "—"}</strong><span class="vel-unid">ao mês</span>
-            <span class="vel-leg">em quanto tempo</span><em class="vel-met">a velocidade</em></div>
+          <div class="vel-card"><span class="vel-rot">Lucro <em>· a distância</em></span><strong class="vel-num"><span class="vel-valor">${pctTxt(lucroPct, 0)}</span></strong>
+            <small>${f(a.v.lucro)} sobre o que pagou</small></div>
+          <div class="vel-card vel-destaque"><span class="vel-rot">Rentabilidade <em>· a velocidade</em></span><strong class="vel-num"><span class="vel-valor">${temTir ? pctTxt(a.tirVenda, 2) : "—"}</span><i>ao mês</i></strong>
+            <small>o ritmo do seu dinheiro</small></div>
         </div>
-        ${temTir ? `<div class="regua"><p class="regua-tit">Na mesma régua: rentabilidade ao mês</p>
-          ${barraT("Venda da carta", a.tirVenda, venceu ? "" : "neutra")}
-          ${barraT("Mesmas parcelas no CDB", a.tirCdb, venceu ? "neutra" : "")}</div>` : ""}
+        ${temTir ? `<div class="regua"><p class="regua-tit">Na mesma régua: as mesmas parcelas, dois destinos</p>
+          ${barraT("Venda da carta", a.tirVenda, venceu ? "" : "neutra", a.v.lucro)}
+          ${barraT("No CDB", a.tirCdb, venceu ? "neutra" : "", a.cdb.ganho)}</div>` : ""}
         ${orientacao}`;
       const itens = [], linhaCdb = [];
       const limite = Math.min(b.prazo - 1, 120);

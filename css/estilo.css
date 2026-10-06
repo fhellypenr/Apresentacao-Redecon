@@ -1108,3 +1108,42 @@ p, li, h1, h2, h3, h4, span, small, strong, label, dd, dt { text-wrap: pretty; }
 .palavras-hoje b, .palavras-antes s { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: .78em; }
 .palavras-hoje b { border: 1px solid rgba(248, 68, 52, .55); background: rgba(248, 68, 52, .12); font-family: var(--fonte-texto); font-weight: 700; }
 .palavras-antes s { border: 1px solid var(--linha); }
+
+/* ---------- Ajustes de espaçamento: virada e usos ---------- */
+.virada-depois { gap: clamp(14px, 2.8vh, 30px); }
+.virada-depois .palavras-hoje { margin: 0; }
+.virada-depois .virada-frase { margin: clamp(2px, .6vh, 8px) 0 clamp(4px, 1vh, 12px); }
+.virada-antes { gap: clamp(12px, 2.2vh, 24px); }
+.virada-etapa1 .virada-antes { gap: clamp(14px, 2.6vh, 28px); }
+.usos-rodape { margin: clamp(26px, 5.5vh, 60px) 0 0 !important; color: #FF8A7A !important; font-weight: 600; }
+
+/* ---------- Venda: cards menores, números maiores, valor do CDB e a "viagem" ---------- */
+.vel-card { padding: clamp(10px, 1.2vw, 18px) clamp(12px, 1.4vw, 20px); gap: 4px; }
+.vel-rot { font-size: .74em; }
+.vel-rot em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--texto); }
+.vel-destaque .vel-rot em { color: #FF8A7A; }
+.vel-num { font-size: clamp(40px, 4.2vw, 80px); display: flex; align-items: baseline; gap: 8px; }
+.vel-num i { font-style: normal; font-family: var(--fonte-texto); font-size: .28em; color: var(--texto-suave); font-weight: 600; }
+.vel-card small { margin-top: 2px; font-size: .74em; }
+.regua-linha { grid-template-columns: minmax(7.5em, auto) 1fr auto auto; }
+.regua-linha strong small { font-family: var(--fonte-texto); font-weight: 400; font-size: .8em; color: var(--texto-suave); }
+.regua-linha em { font-style: normal; font-size: .92em; color: var(--texto-suave); min-width: 6.5em; text-align: right; }
+.viagem { margin-top: clamp(12px, 2.2vh, 22px); display: grid; grid-template-columns: minmax(150px, .8fr) 1.6fr; gap: 14px; align-items: center;
+  border-top: 1px dashed var(--linha); padding-top: clamp(10px, 1.8vh, 18px); }
+.viagem p { margin: 0; font-size: .74em; color: var(--texto-suave); line-height: 1.4; }
+.viagem-pistas { display: grid; gap: 8px; }
+.pista { display: grid; grid-template-columns: 4.2em 1fr; gap: 8px; align-items: center; font-size: .7em; color: var(--texto-suave); }
+.pista-via { position: relative; height: 10px; border-radius: 5px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 8px, transparent 8px 14px); }
+.pista-via::after { content: ""; position: absolute; right: 0; top: -3px; bottom: -3px; width: 2px; background: var(--texto-suave); }
+.carro { position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; }
+.carro.rapido { background: var(--vermelho-2); left: calc(100% - 14px); }
+.carro.lento { background: #8EA0C4; left: 10%; }
+html.animado .carro.rapido { animation: correRapido 12s linear infinite; }
+html.animado .carro.lento { animation: correLento 12s linear infinite; }
+@keyframes correRapido { 0% { left: 0; } 10%, 100% { left: calc(100% - 14px); } }
+@keyframes correLento { from { left: 0; } to { left: calc(100% - 14px); } }
+@media (max-width: 860px) { .viagem { grid-template-columns: 1fr; } }
+
+.vel-rot, .vel-card small, .vel-num i { white-space: nowrap; }
+.vel-num { font-size: clamp(36px, 3.4vw, 64px); }
+.vel-card { align-content: center; }

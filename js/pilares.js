@@ -367,14 +367,7 @@
       <div class="dois dois-venda centro-vertical">
         <div class="nums" data-alvo="nums"></div>
         <div><p class="graf-titulo">Ganho conforme o mês da contemplação (toque numa barra para escolher)</p><div data-alvo="graf"></div>
-          <p class="nota-venda" data-alvo="nota-venda"></p>
-          <div class="viagem">
-            <div class="viagem-pistas" aria-hidden="true">
-              <div class="pista"><span>1 hora</span><div class="pista-via"><i class="carro rapido"></i></div></div>
-              <div class="pista"><span>10 horas</span><div class="pista-via"><i class="carro lento"></i></div></div>
-            </div>
-            <p>${ctx.T("in_venda_viagem")}</p>
-          </div></div>
+          <p class="nota-venda" data-alvo="nota-venda"></p></div>
       </div>
       <div data-alvo="rodape"></div>`,
     iniciar: (el, ctx) => reagir(el, ctx, () => {
@@ -421,9 +414,9 @@
       el.querySelector('[data-alvo="nums"]').innerHTML = `
         <p class="linha-info">Contemplado no mês ${e.mes}, você pagou <strong>${f(a.c.pagoTotal)}</strong> e vende a carta por <strong>${f(a.v.recebe)}</strong></p>
         <div class="vel">
-          <div class="vel-card"><span class="vel-rot">Lucro <em>· a distância</em></span><strong class="vel-num"><span class="vel-valor">${pctTxt(lucroPct, 0)}</span></strong>
+          <div class="vel-card"><span class="vel-rot">Lucro</span><strong class="vel-num"><span class="vel-valor">${pctTxt(lucroPct, 0)}</span></strong>
             <small>${f(a.v.lucro)} sobre o que pagou</small></div>
-          <div class="vel-card vel-destaque"><span class="vel-rot">Rentabilidade <em>· a velocidade</em></span><strong class="vel-num"><span class="vel-valor">${temTir ? pctTxt(a.tirVenda, 2) : "—"}</span><i>ao mês</i></strong>
+          <div class="vel-card vel-destaque"><span class="vel-rot">Rentabilidade</span><strong class="vel-num"><span class="vel-valor">${temTir ? pctTxt(a.tirVenda, 2) : "—"}</span><i>ao mês</i></strong>
             <small>o ritmo do seu dinheiro</small></div>
         </div>
         ${temTir ? `<div class="regua"><p class="regua-tit">Na mesma régua: as mesmas parcelas, dois destinos</p>

@@ -394,6 +394,7 @@
       };
       const montar = () => {
         if (!el.isConnected) { document.removeEventListener("redecon:estado", montar); return; }
+        if (!el.classList.contains("ativo")) return; // recalcula quando a tela aparecer
         sincronizar();
         const n = numerosProposta(ctx, ctx.estado.modalidade), f = ctx.fmtReal, aj = ctx.ajustes, ii = k => inst(ctx, k);
         const P = PILAR[pilar];
@@ -487,10 +488,8 @@
         const imprimir = () => { window.print(); document.title = tituloAntes; };
         img && !img.complete ? img.addEventListener("load", imprimir, { once: true }) : imprimir();
       });
-      sincronizar();
       document.addEventListener("redecon:estado", montar);
       el._aoMostrar = () => { const i = el.querySelector("[data-cliente]"); if (document.activeElement !== i) i.value = ctx.ajustes.cliente || ""; montar(); };
-      montar();
     }
   };
 

@@ -225,51 +225,77 @@
   // Um único canvas atrás de todas as telas. Pontos que se movem e se ligam; reagem ao mouse ou ao toque.
   // Nas telas de cálculo ele fica bem suave para não competir com os números.
   const TELAS_FUNDO_FORTE = ["capa", "quem-redecon", "quem-hs", "virada", "mapa-api", "sintese", "regras", "otimizar", "compromisso", "encerramento"];
+  // Leve para o aparelho: resolução 1x, no máximo ~30 quadros por segundo, linhas agrupadas por cor
+  // e animação só nas telas de "fundo forte"; nas telas de cálculo o fundo fica parado.
+  const fundo = { animar: true, religar: () => {} };
   function iniciarFundo() {
     const cv = document.getElementById("fundo-rede");
     if (!cv) return;
     const g = cv.getContext("2d");
-    let W = 0, H = 0, dpr = 1, pts = [], mouse = null;
+    let W = 0, H = 0, pts = [], mouse = null, quadro = null, ultimo = 0;
+    const NIVEIS = 5;
     function medir() {
-      dpr = Math.min(2, window.devicePixelRatio || 1);
       W = window.innerWidth; H = window.innerHeight;
-      cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px";
-      const n = Math.round(Math.min(100, Math.max(36, W * H / 18000)));
+      cv.width = W; cv.height = H; cv.style.width = W + "px"; cv.style.height = H + "px";
+      const n = Math.round(Math.min(80, Math.max(30, W * H / 22000)));
       pts = Array.from({ length: n }, () => ({
         x: Math.random() * W, y: Math.random() * H,
-        vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3,
+        vx: (Math.random() - .5) * .5, vy: (Math.random() - .5) * .5,
         r: Math.random() < .12 ? 3 : 1.7, quente: Math.random() < .18
       }));
+      desenhar();
     }
-    function passo() {
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      g.clearRect(0, 0, W, H);
-      const lim = Math.min(170, W / 8);
+    function mover() {
       for (const p of pts) {
-        if (animado()) { p.x += p.vx; p.y += p.vy; }
+        p.x += p.vx; p.y += p.vy;
         if (p.x < 0 || p.x > W) p.vx *= -1;
         if (p.y < 0 || p.y > H) p.vy *= -1;
-        if (mouse && animado()) { const dx = mouse.x - p.x, dy = mouse.y - p.y, d = Math.hypot(dx, dy); if (d < 180 && d > 1) { p.x += dx / d * .5; p.y += dy / d * .5; } }
+        if (mouse) { const dx = mouse.x - p.x, dy = mouse.y - p.y, d = Math.hypot(dx, dy); if (d < 180 && d > 1) { p.x += dx / d * .6; p.y += dy / d * .6; } }
       }
-      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
-        const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d < lim) {
-          const al = (1 - d / lim) * .35;
-          g.strokeStyle = a.quente || b.quente ? `rgba(248,68,52,${al})` : `rgba(142,160,196,${al})`;
-          g.lineWidth = 1; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+    }
+    function desenhar() {
+      g.clearRect(0, 0, W, H);
+      const lim = Math.min(170, W / 8), lim2 = lim * lim;
+      const grupos = [[], []].map(() => Array.from({ length: NIVEIS }, () => []));
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i];
+        for (let j = i + 1; j < pts.length; j++) {
+          const b = pts[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy;
+          if (d2 < lim2) {
+            const nivel = Math.min(NIVEIS - 1, Math.floor((1 - Math.sqrt(d2) / lim) * NIVEIS));
+            grupos[a.quente || b.quente ? 1 : 0][nivel].push(a.x, a.y, b.x, b.y);
+          }
         }
       }
-      for (const p of pts) {
-        g.fillStyle = p.quente ? "rgba(248,68,52,.9)" : "rgba(183,195,220,.55)";
-        g.beginPath(); g.arc(p.x, p.y, p.r, 0, Math.PI * 2); g.fill();
-      }
-      requestAnimationFrame(passo);
+      g.lineWidth = 1;
+      grupos.forEach((niveis, q) => niveis.forEach((l, nv) => {
+        if (!l.length) return;
+        const al = ((nv + .5) / NIVEIS) * .35;
+        g.strokeStyle = q ? `rgba(248,68,52,${al})` : `rgba(142,160,196,${al})`;
+        g.beginPath();
+        for (let k = 0; k < l.length; k += 4) { g.moveTo(l[k], l[k + 1]); g.lineTo(l[k + 2], l[k + 3]); }
+        g.stroke();
+      }));
+      [false, true].forEach(q => {
+        g.fillStyle = q ? "rgba(248,68,52,.9)" : "rgba(183,195,220,.55)";
+        g.beginPath();
+        for (const p of pts) if (p.quente === q) { g.moveTo(p.x + p.r, p.y); g.arc(p.x, p.y, p.r, 0, Math.PI * 2); }
+        g.fill();
+      });
     }
+    function passo(t) {
+      quadro = null;
+      if (!fundo.animar || !animado() || document.hidden) return;
+      if (t - ultimo >= 32) { ultimo = t; mover(); desenhar(); }
+      quadro = requestAnimationFrame(passo);
+    }
+    fundo.religar = () => { if (!quadro && fundo.animar && animado() && !document.hidden) quadro = requestAnimationFrame(passo); };
     window.addEventListener("pointermove", e => { mouse = { x: e.clientX, y: e.clientY }; });
     window.addEventListener("pointerleave", () => { mouse = null; });
+    document.addEventListener("visibilitychange", fundo.religar);
     let tR = null;
     window.addEventListener("resize", () => { clearTimeout(tR); tR = setTimeout(medir, 200); });
-    medir(); requestAnimationFrame(passo);
+    medir(); fundo.religar();
   }
 
   // ---------- Funil 3D ----------
@@ -479,12 +505,13 @@
     atual = i;
     document.documentElement.style.setProperty("--dir", i >= antes ? 1 : -1);
     document.body.dataset.fundo = TELAS_FUNDO_FORTE.includes(LISTA[i].id) ? "forte" : "leve";
+    fundo.animar = document.body.dataset.fundo === "forte"; fundo.religar();
     $$(".slide").forEach(s => s.classList.toggle("ativo", +s.dataset.i === i));
     const anterior = $(`.slide[data-i="${antes}"]`);
     if (anterior && anterior._sair && antes !== i) anterior._sair();
     const el = $(`.slide[data-i="${i}"]`);
     if (el && el._reiniciar && (inicial || antes !== i)) el._reiniciar();
-    if (el && el._aoMostrar && antes !== i) el._aoMostrar();
+    if (el && el._aoMostrar && (antes !== i || inicial)) el._aoMostrar();
     if (antes !== i || inicial) animarEntrada(el);
     const sec = LISTA[i].secao;
     $$(".progresso button").forEach((b, si) => {
@@ -503,7 +530,7 @@
     const chk = $("#aj-animacoes");
     if (chk) {
       chk.checked = animacoes;
-      chk.addEventListener("change", () => { animacoes = chk.checked; try { localStorage.setItem(ANIM_CHAVE, animacoes ? "1" : "0"); } catch (e) {} aplicarAnimacoes(); });
+      chk.addEventListener("change", () => { animacoes = chk.checked; try { localStorage.setItem(ANIM_CHAVE, animacoes ? "1" : "0"); } catch (e) {} aplicarAnimacoes(); fundo.religar(); });
     }
     const sel = $("#aj-apresentador");
     sel.innerHTML = `<option value="">Não mostrar</option>` + CONFIG.apresentadores.map(n => `<option>${esc(n)}</option>`).join("");
@@ -554,13 +581,18 @@
   async function iniciar() {
     const hashInicial = location.hash.slice(1); // guardado antes da montagem, que reescreve o endereço
     conferirVersao();
-    D = await Dados.carregar();
+    D = await Dados.carregar({ rapido: true });
     iniciarFundo();
     montarAjustes();
     montar();
     const pelaUrl = LISTA.findIndex(t => t.id === hashInicial);
     if (pelaUrl >= 0) ir(pelaUrl, true);
     mostrarStatus();
+    // Abriu com os dados salvos: quando a planilha responder, atualiza só se algo mudou
+    if (Dados.atualizacao) Dados.atualizacao.then(mudou => {
+      if (mudou) { D = Dados.atual; montar(); }
+      mostrarStatus();
+    });
 
     $("#bt-ant").addEventListener("click", voltar);
     $("#bt-prox").addEventListener("click", avancar);

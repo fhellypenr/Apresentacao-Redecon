@@ -132,19 +132,24 @@
     atual: null,
     origem: "padrao", // "planilha" | "salvo" | "padrao"
     quando: null,
-    async carregar() {
-      try {
-        const abas = {};
-        await Promise.all(CONFIG.abas.map(async a => { abas[a] = await baixarAba(a); }));
-        await baixarAba("Cidades").then(x => { abas.Cidades = x; }).catch(() => {});
-        await baixarAba("Alternativas").then(x => { abas.Alternativas = x; }).catch(() => {});
-        await baixarAba("Casos").then(x => { abas.Casos = x; }).catch(() => {});
-        const d = completar(montar(abas), DADOS_PADRAO);
-        this.atual = derivar(d);
-        this.origem = "planilha";
-        this.quando = new Date().toISOString();
-        try { localStorage.setItem(CHAVE_CACHE, JSON.stringify({ quando: this.quando, dados: d })); } catch (e) {}
-      } catch (erro) {
+    // rapido: abre na hora com os últimos dados salvos e busca a planilha em segundo plano
+    // (this.atualizacao resolve com true quando a planilha trouxe algo diferente)
+    async carregar(opcoes = {}) {
+      if (opcoes.rapido) {
+        let salvo = null;
+        try { salvo = JSON.parse(localStorage.getItem(CHAVE_CACHE)); } catch (e) {}
+        if (salvo && salvo.dados) {
+          const antes = JSON.stringify(salvo.dados);
+          this.atual = derivar(JSON.parse(antes));
+          this.origem = "salvo";
+          this.quando = salvo.quando;
+          this.atualizacao = this.baixar().then(d => !!d && JSON.stringify(d) !== antes).catch(() => false);
+          return this.atual;
+        }
+      }
+      this.atualizacao = null;
+      try { await this.baixar(); }
+      catch (erro) {
         let salvo = null;
         try { salvo = JSON.parse(localStorage.getItem(CHAVE_CACHE)); } catch (e) {}
         if (salvo && salvo.dados) {
@@ -159,6 +164,24 @@
         this.erro = erro.message;
       }
       return this.atual;
+    },
+    // Todas as abas ao mesmo tempo; desiste depois de 8 segundos
+    async baixar() {
+      const abas = {};
+      const opcionais = ["Cidades", "Alternativas", "Casos"];
+      const tudo = Promise.all([
+        ...CONFIG.abas.map(async a => { abas[a] = await baixarAba(a); }),
+        ...opcionais.map(a => baixarAba(a).then(x => { abas[a] = x; }).catch(() => {}))
+      ]);
+      const limite = new Promise((_, rej) => setTimeout(() => rej(new Error("A planilha demorou para responder")), 8000));
+      await Promise.race([tudo, limite]);
+      const d = completar(montar(abas), DADOS_PADRAO);
+      this.atual = derivar(JSON.parse(JSON.stringify(d)));
+      this.origem = "planilha";
+      this.quando = new Date().toISOString();
+      this.erro = null;
+      try { localStorage.setItem(CHAVE_CACHE, JSON.stringify({ quando: this.quando, dados: d })); } catch (e) {}
+      return d;
     },
     lerValor
   };

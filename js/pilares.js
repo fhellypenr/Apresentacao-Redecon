@@ -104,16 +104,18 @@
     });
   }
   // Roda o cálculo agora e sempre que o estado mudar
+  // Só a tela visível recalcula a cada mudança; as outras recalculam quando aparecem (_aoMostrar)
+  const naTela = el => el.classList.contains("ativo");
   function reagir(el, ctx, fn) {
-    const rodar = () => {
-      if (!el.isConnected) { document.removeEventListener("redecon:estado", rodar); return; }
-      sincronizar(el, ctx); fn();
+    const rodar = () => { sincronizar(el, ctx); fn(); };
+    const aoMudar = () => {
+      if (!el.isConnected) { document.removeEventListener("redecon:estado", aoMudar); return; }
+      if (naTela(el)) rodar();
     };
     ligarControles(el, ctx);
-    document.addEventListener("redecon:estado", rodar);
+    document.addEventListener("redecon:estado", aoMudar);
     el._aoMostrar = rodar;
     el._redesenhar = rodar;
-    rodar();
   }
   const numero = (rotulo, valor, nota = "", classe = "") =>
     `<div class="num ${classe}"><span class="num-rotulo">${rotulo}</span><strong class="num-valor">${valor}</strong>${nota ? `<span class="num-nota">${nota}</span>` : ""}</div>`;
@@ -584,13 +586,13 @@
         });
       };
       ligarControles(el, ctx);
-      const rodar = () => {
-        if (!el.isConnected) { document.removeEventListener("redecon:estado", rodar); return; }
-        sincronizar(el, ctx); desenhar();
+      const rodar = () => { sincronizar(el, ctx); desenhar(); };
+      const aoMudar = () => {
+        if (!el.isConnected) { document.removeEventListener("redecon:estado", aoMudar); return; }
+        if (naTela(el)) rodar();
       };
-      document.addEventListener("redecon:estado", rodar);
+      document.addEventListener("redecon:estado", aoMudar);
       el._aoMostrar = rodar;
-      rodar();
     }
   };
 

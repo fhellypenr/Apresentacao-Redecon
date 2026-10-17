@@ -72,7 +72,6 @@
         <div class="virada-seta" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 24h28M28 14l10 10-10 10"/></svg></div>
         <div class="virada-depois">
           <h3>${ctx.T("virada_depois_t")}</h3>
-          <p class="palavras palavras-hoje">${lista(ctx.T("virada_hoje_palavras")).map(w => `<b>${w}</b>`).join("")}</p>
           <p class="virada-frase">${ctx.T("virada_frase")}</p>
           <ul class="hoje">${lista(ctx.T("virada_usos")).map((u, i) => `<li style="--k:${i}">${icone(ICONES_HOJE[i] || "casa")}<span>${u}</span></li>`).join("")}</ul>
         </div>

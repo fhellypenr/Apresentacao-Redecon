@@ -1147,3 +1147,8 @@ html.animado .carro.lento { animation: correLento 12s linear infinite; }
 .vel-rot, .vel-card small, .vel-num i { white-space: nowrap; }
 .vel-num { font-size: clamp(36px, 3.4vw, 64px); }
 .vel-card { align-content: center; }
+
+/* Virada: lista do "hoje" padronizada (uma coluna, todos os itens do mesmo jeito) e mais espaço depois da frase */
+.virada-depois .hoje { grid-template-columns: 1fr; gap: clamp(8px, 1.6vh, 14px); margin-top: clamp(8px, 2vh, 22px); }
+.virada-depois .hoje li { font-size: .95em; }
+@media (max-height: 860px) and (min-width: 861px) { .virada-depois .hoje li { font-size: .9em; } }

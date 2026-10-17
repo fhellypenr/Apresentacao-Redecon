@@ -1152,3 +1152,10 @@ html.animado .carro.lento { animation: correLento 12s linear infinite; }
 .virada-depois .hoje { grid-template-columns: 1fr; gap: clamp(8px, 1.6vh, 14px); margin-top: clamp(8px, 2vh, 22px); }
 .virada-depois .hoje li { font-size: .95em; }
 @media (max-height: 860px) and (min-width: 861px) { .virada-depois .hoje li { font-size: .9em; } }
+
+/* Síntese: frase vermelha menor e mais respiro entre os itens */
+.pilar-sint { gap: clamp(10px, 1.8vh, 18px); }
+.pilar-sint .sint-frase { font-size: clamp(16px, 1.2vw, 23px); line-height: 1.25; margin-bottom: clamp(4px, 1vh, 10px); }
+.pilar-sint ul { gap: clamp(12px, 2.4vh, 22px); line-height: 1.35; }
+@media (max-height: 860px) and (min-width: 861px) { .pilar-sint ul { gap: clamp(8px, 1.6vh, 14px); } }
+.pilar-sint .sint-frase { font-size: clamp(17px, 1.4vw, 27px); min-height: 2.5em; }
